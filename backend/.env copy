@@ -1,0 +1,5 @@
+# backend/.env
+
+SECRET_KEY=my_key_secret_generated
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
