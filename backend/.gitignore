@@ -1,2 +1,5 @@
 /venv
+/uploads
 .env
+test.db
+yolov8n.pt

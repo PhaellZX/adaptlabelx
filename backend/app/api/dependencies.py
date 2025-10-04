@@ -1,5 +1,3 @@
-# backend/app/api/dependencies.py
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -7,13 +5,10 @@ from jose import JWTError, jwt
 
 from app.core.database import get_db
 from app.core.config import settings
+from app.models.user import User
 from app.schemas.user import TokenData
 from app.services import user_service
-from app.models.user import User
 
-# Esta linha cria um "scheme" que diz ao FastAPI:
-# "Para se autenticar, o cliente deve enviar um token no cabeçalho Authorization: Bearer <token>"
-# O 'tokenUrl' aponta para o nosso endpoint de login.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def get_current_user(

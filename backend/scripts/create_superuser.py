@@ -1,4 +1,3 @@
-# backend/scripts/create_superuser.py
 import sys
 import os
 
@@ -11,10 +10,8 @@ from app.schemas.user import UserCreate
 
 db = SessionLocal()
 
-# --- CONFIGURE AQUI OS DADOS DO SEU SUPERUSUÁRIO ---
 SUPERUSER_EMAIL = "admin@example.com"
 SUPERUSER_PASSWORD = "adminpassword123"
-# ---------------------------------------------------
 
 print("Criando superusuário...")
 

@@ -1,6 +1,3 @@
-# backend/app/schemas/user.py
-
-# Adicione Field à importação do pydantic
 from pydantic import BaseModel, EmailStr, Field 
 from datetime import datetime
 from typing import Optional
@@ -11,10 +8,7 @@ class UserBase(BaseModel):
 
 # Schema para a criação de um usuário (recebido pela API)
 class UserCreate(UserBase):
-    # ANTES ESTAVA ASSIM:
-    # password: str
-
-    # AGORA VAI FICAR ASSIM:
+    
     password: str = Field(
         ..., # Os três pontos indicam que o campo é obrigatório
         min_length=8, 

@@ -1,6 +1,7 @@
 # backend/app/models/user.py
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base # Vamos criar este arquivo a seguir
 
@@ -16,3 +17,6 @@ class User(Base):
     # Timestamps para auditoria
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # relação com os datasets
+    datasets = relationship("Dataset", back_populates="owner")

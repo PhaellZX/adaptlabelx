@@ -1,5 +1,3 @@
-# backend/app/core/security.py
-
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
@@ -17,7 +15,6 @@ def get_password_hash(password: str) -> str:
     """Gera o hash de uma senha em texto plano."""
     return pwd_context.hash(password)
 
-# NOVA FUNÇÃO PARA CRIAR O TOKEN
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
