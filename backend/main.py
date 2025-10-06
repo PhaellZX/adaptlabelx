@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.api.endpoints import users, auth, datasets
 from app.models import user, dataset, annotation
@@ -7,6 +8,21 @@ from app.models import user, dataset, annotation
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AdaptlabelX API")
+
+# --- CONFIGURAÇÃO DO CORS --- #
+
+# Lista de origens permitidas (endereços do seu frontend)
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos os cabeçalhos
+)
 
 # -------------- ROTAS -------------- #
 app.include_router(users.router, prefix="/users", tags=["Users"])
