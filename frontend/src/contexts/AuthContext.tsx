@@ -11,6 +11,7 @@ interface User {
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean;
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // NOVO: Inicia carregando
 
   // Carrega o token e os dados do usuário do localStorage ao iniciar
   useEffect(() => {
@@ -30,6 +32,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setUser(JSON.parse(userData));
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
+    setIsLoading(false); 
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -60,7 +63,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
   
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, login, register, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
