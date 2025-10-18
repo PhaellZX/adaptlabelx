@@ -7,6 +7,8 @@ from app.services import ia_service
 
 from app.models.dataset import Dataset, Image
 from app.schemas.dataset import DatasetCreate
+import io              
+import zipfile
 
 # Define o diretório base para os uploads
 UPLOAD_DIRECTORY = "uploads"
@@ -97,3 +99,40 @@ def annotate_dataset_images(db: Session, dataset_id: int):
             print(f"Erro ao processar a imagem {image.id}: {e}")
 
     print(f"Processo de anotação concluído para o dataset ID: {dataset_id}")
+
+def export_annotations_yolo(db: Session, db_dataset: Dataset):
+    """
+    Gera um arquivo ZIP na memória com as anotações no formato YOLO.
+    """
+    # 1. Criar um mapa de classes para IDs numéricos (ex: 'person': 0, 'car': 1)
+    class_labels = sorted({ann.class_label for img in db_dataset.images for ann in img.annotations})
+    class_map = {label: i for i, label in enumerate(class_labels)}
+
+    # Objeto para simular um arquivo na memória RAM
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+        # 2. Criar o arquivo 'classes.txt'
+        classes_content = "\n".join(class_labels)
+        zip_file.writestr('classes.txt', classes_content)
+
+        # 3. Criar um arquivo .txt para cada imagem
+        for image in db_dataset.images:
+            if not image.annotations:
+                continue # Pula imagens sem anotações
+
+            # Remove a extensão do nome do arquivo original (ex: 'img.png' -> 'img')
+            base_filename = os.path.splitext(image.file_name)[0]
+            yolo_filename = f'{base_filename}.txt'
+
+            yolo_content = []
+            for ann in image.annotations:
+                class_id = class_map[ann.class_label]
+                geo = ann.geometry # O geometry já está normalizado
+                line = f"{class_id} {geo['x']} {geo['y']} {geo['width']} {geo['height']}"
+                yolo_content.append(line)
+            
+            zip_file.writestr(yolo_filename, "\n".join(yolo_content))
+    
+    # Retorna o buffer com o conteúdo do ZIP para ser enviado na resposta
+    return zip_buffer.getvalue()

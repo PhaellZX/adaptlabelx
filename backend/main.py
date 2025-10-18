@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.api.endpoints import users, auth, datasets
 from app.models import user, dataset, annotation
+from fastapi.staticfiles import StaticFiles
 
 # Cria todas as tabelas no banco de dados (em um cenário real, use Alembic para migrations)
 Base.metadata.create_all(bind=engine)
@@ -23,6 +24,8 @@ app.add_middleware(
     allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc.)
     allow_headers=["*"],  # Permite todos os cabeçalhos
 )
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # -------------- ROTAS -------------- #
 app.include_router(users.router, prefix="/users", tags=["Users"])

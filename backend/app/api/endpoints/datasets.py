@@ -8,6 +8,8 @@ from app.core.database import get_db
 from app.models.user import User
 from app.schemas.dataset import Dataset, DatasetCreate, Image
 from app.services import dataset_service
+from fastapi.responses import StreamingResponse
+import io
 
 router = APIRouter()
 
@@ -115,3 +117,30 @@ def start_annotation_for_dataset(
     background_tasks.add_task(dataset_service.annotate_dataset_images, db, dataset_id)
     
     return {"message": "O processo de anotação foi iniciado em segundo plano."}
+
+# --- NOVO ENDPOINT DE DOWNLOAD ---
+@router.get("/{dataset_id}/export/yolo", response_class=StreamingResponse)
+def export_dataset_annotations_yolo(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Exporta as anotações de um dataset no formato YOLO (.zip).
+    """
+    dataset = dataset_service.get_dataset(db, dataset_id=dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset não encontrado")
+    if dataset.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Não tem permissão para acessar este dataset")
+
+    zip_bytes = dataset_service.export_annotations_yolo(db, db_dataset=dataset)
+    
+    # Define o nome do arquivo para o download
+    filename = f"{dataset.name.replace(' ', '_')}_yolo.zip"
+    
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
