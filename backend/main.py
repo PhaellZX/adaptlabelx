@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
-from app.api.endpoints import users, auth, datasets
+from app.api.endpoints import users, auth, datasets, models
 from app.models import user, dataset, annotation
 from fastapi.staticfiles import StaticFiles
 
@@ -31,6 +31,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(datasets.router, prefix="/datasets", tags=["Datasets"])
+app.include_router(models.router, prefix="/models", tags=["Models"])
 
 @app.get("/")
 def read_root():

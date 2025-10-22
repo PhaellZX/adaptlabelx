@@ -1,11 +1,13 @@
+// frontend/src/pages/Dashboard/index.tsx
+
 import { useState, useEffect } from 'react';
 import { Container, Button, Navbar, Nav, Card, Row, Col } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Importar o Link
 import api from '../../services/api';
 import { CreateDatasetModal } from '../../components/CreateDatasetModal';
-import { Link } from 'react-router-dom'; 
 
+// Tipagem para um dataset
 interface Dataset {
   id: number;
   name: string;
@@ -15,36 +17,45 @@ interface Dataset {
 }
 
 export function DashboardPage() {
-  const { user, logout } = useAuth(); 
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
-    async function fetchDatasets() {
-      try {
-        const response = await api.get('/datasets/');
-        setDatasets(response.data);
-      } catch (error) {
-        console.error("Falha ao buscar datasets:", error);
-      }
+  // Função reutilizável para buscar os datasets do usuário
+  const fetchDatasets = async () => {
+    try {
+      const response = await api.get('/datasets/');
+      setDatasets(response.data);
+    } catch (error) {
+      console.error("Falha ao buscar datasets:", error);
     }
-    fetchDatasets();
-  }, []);
-
-  const handleDatasetCreated = (newDataset: Dataset) => {
-    setDatasets(prevDatasets => [...prevDatasets, newDataset]);
   };
 
+  // Efeito que busca os datasets quando a página carrega
+  useEffect(() => {
+    fetchDatasets();
+  }, []); // O array vazio [] garante que isso rode apenas uma vez
+
+  // Função chamada pelo Modal após a criação de um dataset
+  const handleDatasetCreated = (success: boolean) => {
+    if (success) {
+      fetchDatasets(); // Força a atualização da lista, corrigindo o bug
+    }
+  };
+
+  // Função de logout
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  // Função para deletar um dataset
   const handleDelete = async (datasetId: number) => {
     if (window.confirm('Tem certeza que deseja excluir este dataset?')) {
       try {
         await api.delete(`/datasets/${datasetId}`);
+        // Remove o dataset da lista localmente
         setDatasets(prevDatasets => prevDatasets.filter(d => d.id !== datasetId));
       } catch (error) {
         console.error("Falha ao deletar dataset:", error);
@@ -84,31 +95,33 @@ export function DashboardPage() {
         </div>
         
         <Row>
-        {datasets.length > 0 ? (
-          datasets.map((dataset) => (
-            <Col md={4} key={dataset.id} className="mb-3">
-              <Link to={`/datasets/${dataset.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <Card className="h-100">
-                  <Card.Body>
-                    <Card.Title>{dataset.name}</Card.Title>
-                    <Card.Text>{dataset.description || 'Sem descrição.'}</Card.Text>
-                    {/* O botão de excluir fica fora do link para não ser acionado acidentalmente */}
-                  </Card.Body>
-                </Card>
-              </Link>
-              <Card.Footer>
-                 <Button variant="outline-danger" size="sm" onClick={() => handleDelete(dataset.id)}>
-                     Excluir
-                 </Button>
-              </Card.Footer>
-            </Col>
-          ))
-        ) : (
-          <p>Você ainda não tem nenhum dataset. Crie um para começar!</p>
-        )}
-      </Row>
+          {datasets.length > 0 ? (
+            datasets.map((dataset) => (
+              <Col md={4} key={dataset.id} className="mb-3">
+                {/* Link envolve o Card para torná-lo clicável */}
+                <Link to={`/datasets/${dataset.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Card className="h-100 shadow-sm">
+                    <Card.Body>
+                      <Card.Title>{dataset.name || "Dataset sem nome"}</Card.Title>
+                      <Card.Text>{dataset.description || 'Sem descrição.'}</Card.Text>
+                    </Card.Body>
+                  </Card>
+                </Link>
+                {/* Botão de excluir fica fora do Link, no Footer */}
+                <Card.Footer>
+                   <Button variant="outline-danger" size="sm" onClick={() => handleDelete(dataset.id)}>
+                       Excluir
+                   </Button>
+                </Card.Footer>
+              </Col>
+            ))
+          ) : (
+            <p>Você ainda não tem nenhum dataset. Crie um para começar!</p>
+          )}
+        </Row>
       </Container>
 
+      {/* Renderiza o Modal de Criação */}
       <CreateDatasetModal 
         show={showModal}
         handleClose={() => setShowModal(false)}

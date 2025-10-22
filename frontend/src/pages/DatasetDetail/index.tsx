@@ -11,12 +11,7 @@ interface Annotation {
     id: number;
     class_label: string;
     confidence: number;
-    geometry: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
+    geometry: any; // Flexível para bbox ou polígono
 }
 
 interface Image {
@@ -41,8 +36,14 @@ export function DatasetDetailPage() {
     const [message, setMessage] = useState('');
     const [isAnnotating, setIsAnnotating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+    
+    // --- Refs para a lógica de polling ---
     const pollingRef = useRef<number>();
+    const initialTotalAnnsRef = useRef<number>(0);
+    const previousTotalAnnsRef = useRef<number>(0);
+    const pollCountRef = useRef<number>(0); // Para evitar loops infinitos
 
+    // Função reutilizável para buscar os dados do dataset
     const fetchDataset = async () => {
         try {
             const response = await api.get(`/datasets/${datasetId}`);
@@ -55,15 +56,18 @@ export function DatasetDetailPage() {
         }
     };
 
+    // Efeito para buscar os dados iniciais e limpar o polling ao sair da página
     useEffect(() => {
         fetchDataset().finally(() => setIsLoading(false));
         return () => clearInterval(pollingRef.current);
     }, [datasetId]);
 
+    // Função para lidar com a seleção de arquivos
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedFiles(event.target.files);
     };
 
+    // Função para fazer o upload dos arquivos
     const handleUpload = async () => {
         if (!selectedFiles) return;
         const formData = new FormData();
@@ -81,22 +85,51 @@ export function DatasetDetailPage() {
         }
     };
 
+    // Função para iniciar a anotação automática
     const handleAnnotate = async () => {
         setIsAnnotating(true);
         setMessage('Iniciando anotação em segundo plano... Isso pode levar alguns minutos.');
+
+        // Salva o estado inicial
+        const initialTotal = dataset?.images.reduce((sum, img) => sum + img.annotations.length, 0) || 0;
+        initialTotalAnnsRef.current = initialTotal;
+        previousTotalAnnsRef.current = initialTotal;
+        pollCountRef.current = 0;
+
         try {
             await api.post(`/datasets/${datasetId}/annotate`);
+
+            // Inicia o polling
             pollingRef.current = window.setInterval(async () => {
+                pollCountRef.current += 1;
                 const updatedDataset = await fetchDataset();
-                if (updatedDataset && updatedDataset.images.length > 0) {
-                    const allAnnotated = updatedDataset.images.every((img: Image) => img.annotations.length > 0);
-                    if (allAnnotated) {
+
+                if (updatedDataset) {
+                    const newTotal = updatedDataset.images.reduce((sum: number, img: Image) => sum + img.annotations.length, 0);
+
+                    // A NOVA LÓGICA DE PARADA
+                    if (newTotal > previousTotalAnnsRef.current) {
+                        // Progresso foi feito. Atualiza o contador e continua.
+                        previousTotalAnnsRef.current = newTotal;
+                    } else if (newTotal === previousTotalAnnsRef.current && newTotal > initialTotalAnnsRef.current) {
+                        // O total é o mesmo do poll anterior E é maior que o inicial.
+                        // Significa que o processo terminou.
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Anotações concluídas com sucesso!');
+                    } else if (pollCountRef.current > 5 && newTotal === initialTotalAnnsRef.current) {
+                        // Se por 25s (5 polls) nada mudou, paramos também (caso o modelo não encontre nada)
+                        clearInterval(pollingRef.current);
+                        setIsAnnotating(false);
+                        setMessage('Anotação concluída. Nenhuma nova anotação encontrada.');
+                    } else if (pollCountRef.current > 120) { // Timeout de 10 min
+                        clearInterval(pollingRef.current);
+                        setIsAnnotating(false);
+                        setMessage('Processo de anotação expirou.');
                     }
                 }
-            }, 5000);
+            }, 5000); // Verifica a cada 5 segundos
+
         } catch (error) {
             console.error("Falha ao iniciar anotação:", error);
             setMessage('Erro ao iniciar o processo de anotação.');
@@ -104,16 +137,15 @@ export function DatasetDetailPage() {
         }
     };
 
+    // Função para baixar as anotações
     const handleDownloadYolo = async () => {
         try {
             const response = await api.get(`/datasets/${datasetId}/export/yolo`, {
                 responseType: 'blob',
             });
-            
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            
             const contentDisposition = response.headers['content-disposition'];
             let filename = `dataset_${datasetId}_yolo.zip`;
             if (contentDisposition) {
@@ -121,11 +153,9 @@ export function DatasetDetailPage() {
                 if (filenameMatch && filenameMatch.length === 2)
                     filename = filenameMatch[1];
             }
-            
             link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
-            
             link.parentNode?.removeChild(link);
         } catch (error) {
             console.error("Falha ao baixar as anotações:", error);
@@ -133,9 +163,11 @@ export function DatasetDetailPage() {
         }
     };
 
+    // Funções para controlar o modal
     const handleImageClick = (image: Image) => setSelectedImage(image);
     const handleCloseModal = () => setSelectedImage(null);
 
+    // Renderização de loading
     if (isLoading) {
         return (
             <div className="d-flex justify-content-center align-items-center vh-100">
@@ -144,8 +176,10 @@ export function DatasetDetailPage() {
         );
     }
 
+    // Renderização de dataset não encontrado
     if (!dataset) return <p className="text-center mt-5">Dataset não encontrado.</p>;
 
+    // Renderização da página
     return (
         <>
             <Container className="mt-4">

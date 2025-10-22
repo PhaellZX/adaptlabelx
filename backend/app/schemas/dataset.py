@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 from .annotation import Annotation
 
 # --- Schemas para Imagem ---
@@ -24,6 +24,7 @@ class DatasetBase(BaseModel):
 
 class DatasetCreate(DatasetBase):
     annotation_type: str = "detection"
+    selected_classes: Optional[List[str]] = None
 
 class DatasetUpdate(DatasetBase):
     pass

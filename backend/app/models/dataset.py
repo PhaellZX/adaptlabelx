@@ -1,9 +1,11 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class Dataset(Base):
     __tablename__ = "datasets"
+
+    selected_classes = Column(JSON, nullable=True)
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
