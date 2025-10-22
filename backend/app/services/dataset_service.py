@@ -90,10 +90,8 @@ def annotate_dataset_images(db: Session, dataset_id: int):
     for image in db_dataset.images:
         print(f"Processando imagem: {image.file_path}")
         try:
-            # Executa o modelo de IA
-            results = ia_service.run_model_on_image(image.file_path)
-            # Salva as anotações no banco de dados
-            ia_service.create_annotations_from_results(db, db_image=image, results=results)
+            results = ia_service.run_model_on_image(image.file_path, db_dataset.annotation_type)
+            ia_service.create_annotations_from_results(db, db_image=image, results=results, annotation_type=db_dataset.annotation_type)
             print(f"Anotações salvas para a imagem ID: {image.id}")
         except Exception as e:
             print(f"Erro ao processar a imagem {image.id}: {e}")

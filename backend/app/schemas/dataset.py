@@ -23,7 +23,7 @@ class DatasetBase(BaseModel):
     description: Optional[str] = None
 
 class DatasetCreate(DatasetBase):
-    pass
+    annotation_type: str = "detection"
 
 class DatasetUpdate(DatasetBase):
     pass

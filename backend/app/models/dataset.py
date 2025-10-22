@@ -8,6 +8,7 @@ class Dataset(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
+    annotation_type = Column(String, nullable=False, default="detection")
     
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="datasets")
