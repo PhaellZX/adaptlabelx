@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import api from '../../services/api';
 
+// Interface para as props do componente
 interface CreateDatasetModalProps {
   show: boolean;
   handleClose: () => void;
@@ -11,20 +12,23 @@ interface CreateDatasetModalProps {
 }
 
 export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: CreateDatasetModalProps) {
+  // State para os campos do formulário
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [annotationType, setAnnotationType] = useState('detection'); // Estado para o tipo
+  const [annotationType, setAnnotationType] = useState('detection'); // Valor padrão
 
+  // Função para lidar com o envio do formulário
   const handleSubmit = async () => {
     try {
-      // Envia o novo tipo de anotação para o backend
+      // Envia todos os dados do formulário para o backend
       const response = await api.post('/datasets/', { 
         name, 
         description, 
         annotation_type: annotationType 
       });
-      onDatasetCreated(response.data); // Informa o componente pai sobre o novo dataset
-      handleClose(); // Fecha o modal
+      
+      onDatasetCreated(response.data); // Notifica o componente pai
+      handleClose(); // Fecha o modal em caso de sucesso
       
       // Limpa os campos para a próxima vez
       setName('');
@@ -36,8 +40,8 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
     }
   };
 
+  // Função para limpar o estado quando o modal é fechado sem salvar
   const handleModalClose = () => {
-      // Limpa os campos ao fechar sem salvar
       setName('');
       setDescription('');
       setAnnotationType('detection');
@@ -45,6 +49,7 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
   }
 
   return (
+    // Usa handleModalClose no onHide para garantir que o estado seja limpo
     <Modal show={show} onHide={handleModalClose}>
       <Modal.Header closeButton>
         <Modal.Title>Criar Novo Dataset</Modal.Title>
@@ -70,12 +75,13 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
             />
           </Form.Group>
           
-          {/* Campo de seleção para o tipo de anotação */}
+          {/* Menu dropdown com a nova opção SAM */}
           <Form.Group className="mb-3">
             <Form.Label>Tipo de Anotação</Form.Label>
             <Form.Select value={annotationType} onChange={e => setAnnotationType(e.target.value)}>
               <option value="detection">Detecção (Caixas)</option>
-              <option value="segmentation">Segmentação (Polígonos)</option>
+              <option value="segmentation">Segmentação (YOLO-Seg)</option>
+              <option value="sam">Segmentação (SAM - Alta Qualidade)</option>
             </Form.Select>
           </Form.Group>
 

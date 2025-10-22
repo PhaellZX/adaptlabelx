@@ -9,3 +9,6 @@ python-jose[cryptography]
 pydantic-settings
 python-multipart
 ultralytics
+torch 
+torchvision 
+segment-anything
