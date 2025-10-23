@@ -2,7 +2,7 @@ import os
 import shutil
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.services import ia_service
 
 from app.models.dataset import Dataset, Image
@@ -84,29 +84,63 @@ def save_image_files(db: Session, files: List[UploadFile], dataset_id: int):
 # --- Função de Anotação com IA ---
 def annotate_dataset_images(db: Session, dataset_id: int):
     """
-    Função de trabalho que será executada em segundo plano.
-    Ela busca todas as imagens de um dataset e aplica o modelo de IA.
+    Inicia a anotação para todas as imagens num dataset.
+    Isto agora irá verificar se um modelo customizado deve ser usado.
     """
     print(f"Iniciando anotação para o dataset ID: {dataset_id}")
     db_dataset = get_dataset(db, dataset_id=dataset_id)
-    selected_classes = db_dataset.selected_classes
     if not db_dataset:
-        print(f"Dataset {dataset_id} não encontrado. Abortando.")
+        print("Dataset não encontrado, a anotação foi cancelada.")
         return
 
+    # Obtém as configurações de anotação do dataset
+    annotation_type = db_dataset.annotation_type
+    selected_classes = db_dataset.selected_classes
+    custom_model_path: Optional[str] = None
+    
+    # --- NOVA LÓGICA ---
+    if db_dataset.custom_model_id and db_dataset.custom_model:
+        # Se um modelo customizado está ligado a este dataset
+        custom_model_path = db_dataset.custom_model.file_path
+        # O tipo de anotação é ditado pelo modelo customizado
+        annotation_type = db_dataset.custom_model.model_type
+        print(f"Usando modelo customizado: {custom_model_path}")
+    else:
+        # Usa um modelo padrão
+        print(f"Usando modelo padrão: {annotation_type}")
+    # --- FIM DA NOVA LÓGICA ---
+
     for image in db_dataset.images:
+        if not os.path.exists(image.file_path):
+            print(f"Arquivo de imagem não encontrado, pulando: {image.file_path}")
+            continue
+        
         print(f"Processando imagem: {image.file_path}")
         try:
-            # 2. Passar a lista de classes para o serviço de IA
+            # 1. Passa o custom_model_path para o serviço de IA
             results = ia_service.run_model_on_image(
                 image.file_path, 
-                db_dataset.annotation_type,
-                selected_classes 
+                annotation_type,
+                selected_classes,
+                custom_model_path # <--- NOVO ARGUMENTO
             )
-            ia_service.create_annotations_from_results(db, db_image=image, results=results, annotation_type=db_dataset.annotation_type)
+            
+            # 2. Determina o tipo de anotação para guardar
+            # (O SAM é um 'tipo' de modelo, mas produz 'segmentation')
+            effective_annotation_type = annotation_type
+            if annotation_type == 'sam':
+                effective_annotation_type = 'segmentation'
+            
+            ia_service.create_annotations_from_results(
+                db, 
+                db_image=image, 
+                results=results, 
+                annotation_type=effective_annotation_type
+            )
+            
         except Exception as e:
             print(f"Erro ao processar a imagem {image.id}: {e}")
-
+    
     print(f"Processo de anotação concluído para o dataset ID: {dataset_id}")
 
 def export_annotations_yolo(db: Session, db_dataset: Dataset):

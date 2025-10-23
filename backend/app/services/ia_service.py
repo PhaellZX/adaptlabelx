@@ -5,49 +5,90 @@ from ultralytics.models.sam import SAM
 from sqlalchemy.orm import Session
 import io
 import zipfile
-import os # Importar o 'os' para construir caminhos
-from typing import List, Optional
+import os
+from typing import List, Optional, Dict, Any
 
 from app.models.dataset import Image
 from app.models.annotation import Annotation
 
-# --- 1. Definir o caminho para a nova pasta ---
-# (Assume que o script é executado da raiz do 'backend')
-MODEL_DIR = "ia_models"
+# --- Cache para Modelos Customizados ---
+# Isto evita recarregar o modelo .pt (que é lento) para cada imagem.
+custom_model_cache: Dict[str, Any] = {}
 
-# --- 2. Atualizar os caminhos para carregar os modelos ---
+# --- Modelos Padrão ---
+MODEL_DIR = "ia_models"
 detection_model = YOLO(os.path.join(MODEL_DIR, 'yolov8n.pt'))
 segmentation_model = YOLO(os.path.join(MODEL_DIR, 'yolov8n-seg.pt'))
 sam_model = SAM(os.path.join(MODEL_DIR, 'sam_b.pt'))
 
+def _get_model(model_path: str):
+    """
+    Função auxiliar para carregar e fazer cache de modelos customizados.
+    """
+    if model_path in custom_model_cache:
+        # 1. Retorna o modelo do cache se já estiver carregado
+        print(f"Carregando modelo customizado do cache: {model_path}")
+        return custom_model_cache[model_path]
+    
+    # 2. Se não, carrega do disco e armazena em cache
+    print(f"Carregando novo modelo customizado do disco: {model_path}")
+    try:
+        model = YOLO(model_path)
+        custom_model_cache[model_path] = model
+        return model
+    except Exception as e:
+        print(f"ERRO: Falha ao carregar modelo customizado {model_path}: {e}")
+        # Limpa o cache se falhar
+        if model_path in custom_model_cache:
+            del custom_model_cache[model_path]
+        return None
 
 def run_model_on_image(
     image_path: str, 
     model_type: str, 
-    selected_classes: Optional[List[str]] = None
+    selected_classes: Optional[List[str]] = None,
+    custom_model_path: Optional[str] = None # <-- Argumento principal
 ):
     """
-    Executa o modelo YOLO apropriado em uma imagem, filtrando por classes.
+    Executa o modelo apropriado (padrão ou customizado) numa imagem.
     """
     
     model = None
     
-    if model_type == 'segmentation':
-        model = segmentation_model
+    # --- 1. Determina qual modelo carregar ---
+    if custom_model_path:
+        model = _get_model(custom_model_path)
+        if model is None:
+            raise Exception(f"Não foi possível carregar o modelo customizado de {custom_model_path}")
     elif model_type == 'sam':
-        model = detection_model 
+        # Pipeline SAM é especial, não usa a variável 'model' principal
+        pass
+    elif model_type == 'segmentation':
+        model = segmentation_model
     else: # 'detection'
         model = detection_model
 
+    # --- 2. Lógica de Filtro de Classes ---
+    # Isto agora funciona para QUALQUER modelo carregado (padrão ou customizado)
     class_indices = []
-    if selected_classes:
-        name_to_index_map = {v: k for k, v in model.names.items()}
+    filter_args = {}
+    
+    # Determina o mapa de nomes correto (padrão, customizado, ou do detector para SAM)
+    model_names_map = {}
+    if model_type == 'sam' and not custom_model_path:
+        model_names_map = detection_model.names # SAM usa o detector padrão
+    elif model:
+        model_names_map = model.names # Modelo customizado ou padrão YOLO
+        
+    if selected_classes and model_names_map:
+        name_to_index_map = {v: k for k, v in model_names_map.items()}
         class_indices = [name_to_index_map[name] for name in selected_classes if name in name_to_index_map]
         print(f"Filtrando por classes: {selected_classes} (Índices: {class_indices})")
-    
-    filter_args = {"classes": class_indices} if class_indices else {}
-    
-    if model_type == 'sam':
+        filter_args = {"classes": class_indices}
+
+    # --- 3. Executa o pipeline de anotação ---
+    if model_type == 'sam' and not custom_model_path:
+        # Pipeline SAM (usa o 'detection_model' com filtros)
         print(f"Rodando pipeline SAM para: {image_path}")
         det_results_list = detection_model(image_path, verbose=False, **filter_args)
         det_results = det_results_list[0]
@@ -65,17 +106,23 @@ def run_model_on_image(
         
         return sam_results
     
-    else:
+    elif model:
+        # Pipeline Padrão (Detecção/Segmentação) ou Customizado
         return model(image_path, verbose=False, **filter_args)[0]
+    
+    else:
+        raise Exception("Nenhum modelo válido foi determinado para anotação.")
+
 
 def create_annotations_from_results(db: Session, db_image: Image, results, annotation_type: str):
     """
     Processa os resultados do modelo e cria os registros de anotação no banco.
+    (Esta função não precisa de mudanças, já é genérica)
     """
     new_annotations = []
     class_names = results.names
     
-    if (annotation_type == 'segmentation' or annotation_type == 'sam'):
+    if annotation_type == 'segmentation':
         if results.masks is None: 
             print("Resultados de segmentação não contêm máscaras.")
             return []

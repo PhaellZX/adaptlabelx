@@ -4,6 +4,7 @@ import { RegisterPage } from '../pages/Register';
 import { DashboardPage } from '../pages/Dashboard'; 
 import { ProtectedRoute } from './ProtectedRoute'; 
 import { DatasetDetailPage } from '../pages/DatasetDetail';
+import { CustomModelsPage } from '../pages/CustomModels';
 
 export function AppRoutes() {
   return (
@@ -30,6 +31,10 @@ export function AppRoutes() {
               <DatasetDetailPage />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/models"
+          element={<ProtectedRoute><CustomModelsPage /></ProtectedRoute>}
         />
       </Routes>
     </Router>

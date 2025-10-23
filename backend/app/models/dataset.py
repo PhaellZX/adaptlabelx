@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.core.base import Base
+from app.models.custom_model import CustomModel
 
 class Dataset(Base):
     __tablename__ = "datasets"
@@ -17,6 +18,9 @@ class Dataset(Base):
     
     # Se um dataset for deletado, todas as imagens associadas também serão.
     images = relationship("Image", back_populates="dataset", cascade="all, delete-orphan")
+
+    custom_model_id = Column(Integer, ForeignKey("custom_models.id"), nullable=True)
+    custom_model = relationship("CustomModel")
 
 class Image(Base):
     __tablename__ = "images"

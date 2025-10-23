@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.database import engine, Base
-from app.api.endpoints import users, auth, datasets, models
-from app.models import user, dataset, annotation
+from app.core.database import engine
+from app.core.base import Base
+from app.api.endpoints import users, auth, datasets, models, custom_models
+from app.models import user, dataset, annotation, custom_model
 from fastapi.staticfiles import StaticFiles
 
 # Cria todas as tabelas no banco de dados (em um cenário real, use Alembic para migrations)
@@ -32,6 +33,7 @@ app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(datasets.router, prefix="/datasets", tags=["Datasets"])
 app.include_router(models.router, prefix="/models", tags=["Models"])
+app.include_router(custom_models.router, prefix="/custom-models", tags=["Custom Models"])
 
 @app.get("/")
 def read_root():
