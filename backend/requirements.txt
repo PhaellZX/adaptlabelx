@@ -12,3 +12,4 @@ ultralytics
 torch 
 torchvision 
 segment-anything
+Pillow

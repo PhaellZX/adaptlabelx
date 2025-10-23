@@ -144,3 +144,78 @@ def export_dataset_annotations_yolo(
         media_type="application/x-zip-compressed",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/{dataset_id}/export/labelme", response_class=StreamingResponse)
+def export_dataset_annotations_labelme(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Exporta as anotações de um dataset no formato LabelMe (.zip).
+    """
+    dataset = dataset_service.get_dataset(db, dataset_id=dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset não encontrado")
+    if dataset.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Não tem permissão para acessar este dataset")
+
+    zip_bytes = dataset_service.export_annotations_labelme(db, db_dataset=dataset)
+    
+    filename = f"{dataset.name.replace(' ', '_')}_labelme.zip"
+    
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/{dataset_id}/export/coco", response_class=StreamingResponse)
+def export_dataset_annotations_coco(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Exporta as anotações de um dataset no formato COCO (.zip).
+    """
+    dataset = dataset_service.get_dataset(db, dataset_id=dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset não encontrado")
+    if dataset.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Não tem permissão para acessar este dataset")
+
+    zip_bytes = dataset_service.export_annotations_coco(db, db_dataset=dataset)
+    
+    filename = f"{dataset.name.replace(' ', '_')}_coco.zip"
+    
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@router.get("/{dataset_id}/export/cvat", response_class=StreamingResponse)
+def export_dataset_annotations_cvat(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Exporta as anotações de um dataset no formato CVAT XML (.zip).
+    """
+    dataset = dataset_service.get_dataset(db, dataset_id=dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset não encontrado")
+    if dataset.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Não tem permissão para acessar este dataset")
+
+    zip_bytes = dataset_service.export_annotations_cvat(db, db_dataset=dataset)
+    
+    filename = f"{dataset.name.replace(' ', '_')}_cvat.zip"
+    
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/x-zip-compressed",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

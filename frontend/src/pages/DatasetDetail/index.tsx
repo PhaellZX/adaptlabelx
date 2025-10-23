@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Button, Card, Row, Col, Form, Alert, Spinner } from 'react-bootstrap';
-import api from '../../services/api';
+import api from '../../services/api'; // Importa a instância do Axios (configurada para a porta 8001)
 import { AnnotationViewerModal } from '../../components/AnnotationViewerModal';
 
 // --- Tipagem dos Dados (Completa) ---
@@ -41,7 +41,7 @@ export function DatasetDetailPage() {
     const pollingRef = useRef<number>();
     const initialTotalAnnsRef = useRef<number>(0);
     const previousTotalAnnsRef = useRef<number>(0);
-    const pollCountRef = useRef<number>(0); // Para evitar loops infinitos
+    const pollCountRef = useRef<number>(0);
 
     // Função reutilizável para buscar os dados do dataset
     const fetchDataset = async () => {
@@ -90,7 +90,6 @@ export function DatasetDetailPage() {
         setIsAnnotating(true);
         setMessage('Iniciando anotação em segundo plano... Isso pode levar alguns minutos.');
 
-        // Salva o estado inicial
         const initialTotal = dataset?.images.reduce((sum, img) => sum + img.annotations.length, 0) || 0;
         initialTotalAnnsRef.current = initialTotal;
         previousTotalAnnsRef.current = initialTotal;
@@ -98,38 +97,28 @@ export function DatasetDetailPage() {
 
         try {
             await api.post(`/datasets/${datasetId}/annotate`);
-
-            // Inicia o polling
             pollingRef.current = window.setInterval(async () => {
                 pollCountRef.current += 1;
                 const updatedDataset = await fetchDataset();
-
                 if (updatedDataset) {
                     const newTotal = updatedDataset.images.reduce((sum: number, img: Image) => sum + img.annotations.length, 0);
-
-                    // A NOVA LÓGICA DE PARADA
                     if (newTotal > previousTotalAnnsRef.current) {
-                        // Progresso foi feito. Atualiza o contador e continua.
                         previousTotalAnnsRef.current = newTotal;
                     } else if (newTotal === previousTotalAnnsRef.current && newTotal > initialTotalAnnsRef.current) {
-                        // O total é o mesmo do poll anterior E é maior que o inicial.
-                        // Significa que o processo terminou.
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Anotações concluídas com sucesso!');
                     } else if (pollCountRef.current > 5 && newTotal === initialTotalAnnsRef.current) {
-                        // Se por 25s (5 polls) nada mudou, paramos também (caso o modelo não encontre nada)
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Anotação concluída. Nenhuma nova anotação encontrada.');
-                    } else if (pollCountRef.current > 120) { // Timeout de 10 min
+                    } else if (pollCountRef.current > 120) {
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Processo de anotação expirou.');
                     }
                 }
-            }, 5000); // Verifica a cada 5 segundos
-
+            }, 5000);
         } catch (error) {
             console.error("Falha ao iniciar anotação:", error);
             setMessage('Erro ao iniciar o processo de anotação.');
@@ -137,37 +126,55 @@ export function DatasetDetailPage() {
         }
     };
 
-    // Função para baixar as anotações
-    const handleDownloadYolo = async () => {
+    // Função genérica para lidar com downloads de arquivos
+    const handleDownload = async (url: string, defaultFilename: string) => {
         try {
-            const response = await api.get(`/datasets/${datasetId}/export/yolo`, {
+            const response = await api.get(url, {
                 responseType: 'blob',
             });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
-            link.href = url;
+            link.href = blobUrl;
+            
             const contentDisposition = response.headers['content-disposition'];
-            let filename = `dataset_${datasetId}_yolo.zip`;
+            let filename = defaultFilename;
             if (contentDisposition) {
                 const filenameMatch = contentDisposition.match(/filename="(.+)"/);
                 if (filenameMatch && filenameMatch.length === 2)
                     filename = filenameMatch[1];
             }
+            
             link.setAttribute('download', filename);
             document.body.appendChild(link);
             link.click();
             link.parentNode?.removeChild(link);
         } catch (error) {
-            console.error("Falha ao baixar as anotações:", error);
+            console.error(`Falha ao baixar ${defaultFilename}:`, error);
             setMessage("Erro ao preparar o arquivo para download.");
         }
+    };
+
+    // Funções específicas de download
+    const handleDownloadYolo = () => {
+        handleDownload(`/datasets/${datasetId}/export/yolo`, `dataset_${datasetId}_yolo.zip`);
+    };
+
+    const handleDownloadLabelMe = () => {
+        handleDownload(`/datasets/${datasetId}/export/labelme`, `dataset_${datasetId}_labelme.zip`);
+    };
+    
+    const handleDownloadCoco = () => {
+        handleDownload(`/datasets/${datasetId}/export/coco`, `dataset_${datasetId}_coco.zip`);
+    };
+    
+    const handleDownloadCvat = () => {
+        handleDownload(`/datasets/${datasetId}/export/cvat`, `dataset_${datasetId}_cvat.zip`);
     };
 
     // Funções para controlar o modal
     const handleImageClick = (image: Image) => setSelectedImage(image);
     const handleCloseModal = () => setSelectedImage(null);
 
-    // Renderização de loading
     if (isLoading) {
         return (
             <div className="d-flex justify-content-center align-items-center vh-100">
@@ -176,10 +183,8 @@ export function DatasetDetailPage() {
         );
     }
 
-    // Renderização de dataset não encontrado
     if (!dataset) return <p className="text-center mt-5">Dataset não encontrado.</p>;
 
-    // Renderização da página
     return (
         <>
             <Container className="mt-4">
@@ -202,9 +207,18 @@ export function DatasetDetailPage() {
                     </Card>
                     <Card style={{minWidth: '250px'}}>
                         <Card.Header>Exportar Anotações</Card.Header>
-                        <Card.Body className="d-flex align-items-center justify-content-center">
-                            <Button variant="outline-primary" onClick={handleDownloadYolo} disabled={dataset.images.length === 0}>
+                        <Card.Body className="d-flex flex-column align-items-center justify-content-center gap-2">
+                            <Button variant="outline-primary" onClick={handleDownloadYolo} disabled={dataset.images.length === 0} className="w-100">
                                Baixar formato YOLO
+                            </Button>
+                            <Button variant="outline-secondary" onClick={handleDownloadLabelMe} disabled={dataset.images.length === 0} className="w-100">
+                               Baixar formato LabelMe
+                            </Button>
+                            <Button variant="outline-info" onClick={handleDownloadCoco} disabled={dataset.images.length === 0} className="w-100">
+                               Baixar formato COCO
+                            </Button>
+                            <Button variant="outline-dark" onClick={handleDownloadCvat} disabled={dataset.images.length === 0} className="w-100">
+                               Baixar formato CVAT
                             </Button>
                         </Card.Body>
                     </Card>
@@ -224,7 +238,8 @@ export function DatasetDetailPage() {
                     {dataset.images.map(image => (
                         <Col md={3} key={image.id} className="mb-3">
                             <Card onClick={() => handleImageClick(image)} style={{ cursor: 'pointer' }}>
-                                <Card.Img variant="top" src={`http://127.0.0.1:8000/${image.file_path}`} />
+                                {/* Corrigido para a porta 8001 */}
+                                <Card.Img variant="top" src={`http://127.0.0.1:8001/${image.file_path}`} />
                                 <Card.Body>
                                     <Card.Text className="text-truncate">{image.file_name}</Card.Text>
                                     <Card.Text><strong>Anotações:</strong> {image.annotations.length}</Card.Text>
