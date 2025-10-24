@@ -13,3 +13,5 @@ torch
 torchvision 
 segment-anything
 Pillow
+psycopg2-binary
+python-dotenv

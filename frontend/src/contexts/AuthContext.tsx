@@ -1,7 +1,9 @@
-import { createContext, useState, useContext, useEffect, PropsWithChildren } from 'react';
-import api from '../services/api';
+// frontend/src/contexts/AuthContext.tsx
 
-// Tipagem para os dados do usuário e do contexto
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
+
 interface User {
   id: number;
   email: string;
@@ -10,70 +12,107 @@ interface User {
 }
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  isLoading: boolean;
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: PropsWithChildren) {
+// Função auxiliar para configurar o token
+const setAuthorizationHeader = (token: string | null) => {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // NOVO: Inicia carregando
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Carrega o token e os dados do usuário do localStorage ao iniciar
+  // Efeito para carregar o utilizador no arranque
   useEffect(() => {
-    const token = localStorage.getItem('adaptlabel_token');
-    const userData = localStorage.getItem('adaptlabel_user');
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    const token = localStorage.getItem('@AdaptlabelX:token');
+    if (token) {
+      setAuthorizationHeader(token);
+      api.get('/users/me')
+        .then(response => {
+          setUser(response.data);
+        })
+        .catch(() => {
+          // Token inválido, limpar
+          localStorage.removeItem('@AdaptlabelX:token');
+          setAuthorizationHeader(null);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
-    setIsLoading(false); 
-  }, []);
+  }, []); // O '[]' está correto, só corre uma vez
 
-  const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', new URLSearchParams({
-      username: email,
-      password: password,
-    }));
-    const { access_token } = response.data;
-    
-    localStorage.setItem('adaptlabel_token', access_token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+  // --- A CORREÇÃO ESTÁ AQUI ---
+  const login = async (email: string, password: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', email);
+      formData.append('password', password);
 
-    const userResponse = await api.get('/users/me');
-    setUser(userResponse.data);
-    localStorage.setItem('adaptlabel_user', JSON.stringify(userResponse.data));
-  };
+      const response = await api.post('/auth/token', formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
 
-  const register = async (email: string, password: string) => {
-    await api.post('/users/', { email, password });
-    await login(email, password);
+      const { access_token } = response.data;
+
+      // 1. Guardar o token
+      localStorage.setItem('@AdaptlabelX:token', access_token);
+      // 2. Configurar o token para pedidos futuros
+      setAuthorizationHeader(access_token);
+
+      // 3. (A MUDANÇA) Enviar o token MANUALMENTE neste pedido
+      //    para garantir que ele é enviado, sem depender do 'defaults'
+      const userResponse = await api.get('/users/me', {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      });
+      
+      setUser(userResponse.data);
+      setLoading(false);
+      navigate('/dashboard');
+      return true;
+
+    } catch (error) {
+      console.error("Erro no login:", error);
+      setLoading(false);
+      return false;
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('adaptlabel_token');
-    localStorage.removeItem('adaptlabel_user');
-    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('@AdaptlabelX:token');
+    setAuthorizationHeader(null);
+    navigate('/');
   };
-  
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// Hook customizado para facilitar o uso do contexto
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

@@ -1,39 +1,33 @@
-from pydantic import BaseModel, EmailStr, Field 
-from datetime import datetime
+# backend/app/schemas/user.py
+
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-# Propriedades compartilhadas por todos os schemas de usuário
+# --- UserBase ---
+# Campos que são comuns a todos os schemas de Utilizador
 class UserBase(BaseModel):
     email: EmailStr
 
-# Schema para a criação de um usuário (recebido pela API)
+# --- UserCreate ---
+# O que esperamos receber do frontend para criar um utilizador (Registo)
 class UserCreate(UserBase):
-    
-    password: str = Field(
-        ..., # Os três pontos indicam que o campo é obrigatório
-        min_length=8, 
-        max_length=72,
-        description="A senha do usuário deve ter entre 8 e 72 caracteres."
-    )
+    password: str
 
-# Schema para a leitura de um usuário (retornado pela API)
-class User(UserBase):
-    id: int
-    is_active: bool
-    is_superuser: bool
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    email: Optional[str] = None
-
-class UserUpdate(BaseModel):
+# --- UserUpdate ---
+# O que esperamos receber para atualizar um utilizador (Admin)
+class UserUpdate(UserBase):
     email: Optional[EmailStr] = None
+    password: Optional[str] = None
     is_active: Optional[bool] = None
     is_superuser: Optional[bool] = None
+
+# --- User ---
+# O que devolvemos ao frontend (o nosso "response_model")
+class User(UserBase):
+    id: int
+    is_active: bool       # <--- CAMPO ADICIONADO
+    is_superuser: bool    # <--- CAMPO ADICIONADO
+
+    class Config:
+        # Permite ao Pydantic ler os dados a partir de um modelo SQLAlchemy
+        from_attributes = True

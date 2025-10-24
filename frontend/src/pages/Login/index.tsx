@@ -1,66 +1,68 @@
+// frontend/src/pages/Login/index.tsx
+
 import { useState } from 'react';
-import { Button, Form, Container, Row, Col, Alert } from 'react-bootstrap';
-import { useAuth } from '../../contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext'; // 1. Importar o useAuth
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login } = useAuth(); // 2. Obter a função de login do contexto
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(''); // Limpa erros anteriores
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
     try {
-      await login(email, password);
-      navigate('/dashboard'); // Redireciona para o dashboard após o login
-    } catch (err: any) {
-      setError('Falha no login. Verifique seu email e senha.');
+      // 3. Chamar a função de login do AuthContext
+      const success = await login(email, password);
+
+      if (!success) {
+        setError('Falha no login. Verifique seu email e senha.');
+      }
+      // Se 'success' for true, o AuthContext irá tratar do redirecionamento
+    } catch (err) {
       console.error(err);
+      setError('Falha no login. Verifique seu email e senha.');
     }
   };
 
   return (
-    <Container>
-      <Row className="justify-content-md-center mt-5">
-        <Col md={6}>
+    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
+      <Card style={{ width: '400px' }}>
+        <Card.Body>
           <h2 className="text-center mb-4">Login</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="formBasicEmail">
+            <Form.Group className="mb-3">
               <Form.Label>Endereço de Email</Form.Label>
               <Form.Control
                 type="email"
-                placeholder="Digite seu email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formBasicPassword">
+            <Form.Group className="mb-3">
               <Form.Label>Senha</Form.Label>
               <Form.Control
                 type="password"
-                placeholder="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </Form.Group>
-
-            <div className="d-grid">
-              <Button variant="primary" type="submit">
-                Entrar
-              </Button>
-            </div>
+            <Button variant="primary" type="submit" className="w-100">
+              Entrar
+            </Button>
           </Form>
-          <div className="text-center mt-3">
-            <Link to="/register">Não tem uma conta? Cadastre-se</Link>
+          <div className="mt-3 text-center">
+            Não tem uma conta? <Link to="/register">Cadastre-se</Link>
           </div>
-        </Col>
-      </Row>
+        </Card.Body>
+      </Card>
     </Container>
   );
 }

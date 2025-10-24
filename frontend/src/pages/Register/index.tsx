@@ -1,77 +1,82 @@
+// frontend/src/pages/Register/index.tsx
+
 import { useState } from 'react';
-import { Button, Form, Container, Row, Col, Alert } from 'react-bootstrap';
-import { useAuth } from '../../contexts/AuthContext';
+import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 
 export function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('As senhas não coincidem.');
+      return;
+    }
 
-     try {
-      await register(email, password);
-      navigate('/dashboard'); // Redireciona para o dashboard após o cadastro
+    try {
+      // 1. Enviar os dados de registo para a rota correta: /users/
+      await api.post('/users/', {
+        email: email,
+        password: password,
+      });
+      
+      // 2. Se for bem-sucedido, redireciona para o login
+      navigate('/'); 
     } catch (err: any) {
-      setError('Falha no cadastro. Tente outro email.');
-      console.error(err);
+      console.error("Falha no cadastro:", err);
+      setError(err.response?.data?.detail || 'Falha no cadastro. Tente outro email.');
     }
   };
 
   return (
-    <Container>
-      <Row className="justify-content-md-center mt-5">
-        <Col md={6}>
+    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
+      <Card style={{ width: '400px' }}>
+        <Card.Body>
           <h2 className="text-center mb-4">Cadastro</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="formRegisterEmail">
+            <Form.Group className="mb-3">
               <Form.Label>Endereço de Email</Form.Label>
               <Form.Control
                 type="email"
-                placeholder="Digite seu email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </Form.Group>
-
-            <Form.Group className="mb-3" controlId="formRegisterPassword">
+            <Form.Group className="mb-3">
               <Form.Label>Senha</Form.Label>
               <Form.Control
                 type="password"
-                placeholder="Senha (mínimo 8 caracteres)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </Form.Group>
-            
-            <Form.Group className="mb-3" controlId="formRegisterConfirmPassword">
+            <Form.Group className="mb-3">
               <Form.Label>Confirmar Senha</Form.Label>
               <Form.Control
                 type="password"
-                placeholder="Confirme sua senha"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                required
               />
             </Form.Group>
-
-            <div className="d-grid">
-              <Button variant="primary" type="submit">
-                Cadastrar
-              </Button>
-            </div>
+            <Button variant="primary" type="submit" className="w-100">
+              Cadastrar
+            </Button>
           </Form>
-            <div className="text-center mt-3">
-            <Link to="/">Já tem uma conta? Faça login</Link>
+          <div className="mt-3 text-center">
+            Já tem uma conta? <Link to="/">Faça login</Link>
           </div>
-        </Col>
-      </Row>
+        </Card.Body>
+      </Card>
     </Container>
   );
 }

@@ -239,7 +239,7 @@ export function DatasetDetailPage() {
                         <Col md={3} key={image.id} className="mb-3">
                             <Card onClick={() => handleImageClick(image)} style={{ cursor: 'pointer' }}>
                                 {/* Corrigido para a porta 8001 */}
-                                <Card.Img variant="top" src={`http://127.0.0.1:8001/${image.file_path}`} />
+                                <Card.Img variant="top" src={`http://127.0.0.1:8000/${image.file_path}`} />
                                 <Card.Body>
                                     <Card.Text className="text-truncate">{image.file_name}</Card.Text>
                                     <Card.Text><strong>Anotações:</strong> {image.annotations.length}</Card.Text>
