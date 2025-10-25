@@ -1,0 +1,45 @@
+# docker-compose.yml (na raiz do projeto)
+version: "3.8"
+
+services:
+  # 1. O Serviço de Backend (FastAPI)
+  backend:
+    build: ./backend  # Onde encontrar o Dockerfile do backend
+    container_name: adaptlabelx_backend
+    restart: unless-stopped
+    
+    # Passa o ficheiro .env para dentro do contentor
+    # Assim, o Python pode ler a sua DATABASE_URL (do Neon) e a SECRET_KEY
+    env_file:
+      - ./backend/.env
+      
+    # "Volumes" (pastas partilhadas)
+    # Isto é VITAL. Garante que os seus modelos e uploads
+    # não se perdem quando o contentor para.
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/custom_models_user:/app/custom_models_user
+      - ./backend/ia_models:/app/ia_models
+      
+    # Mapeia a porta 8000 de "dentro" do contentor
+    # para a porta 8000 "fora" (na sua máquina)
+    # Isto é útil para testar a API diretamente
+    ports:
+      - "8000:8000"
+
+  # 2. O Serviço de Frontend (React + Nginx)
+  frontend:
+    build: ./frontend # Onde encontrar o Dockerfile do frontend
+    container_name: adaptlabelx_frontend
+    restart: unless-stopped
+    
+    # Mapeia a porta 80 de "dentro" do contentor (Nginx)
+    # para a porta 80 "fora" (na sua máquina)
+    # Isto significa que você vai aceder à app em http://localhost
+    ports:
+      - "80:80"
+      
+    # Diz ao Docker para esperar que o 'backend' esteja pronto
+    # antes de iniciar o 'frontend'
+    depends_on:
+      - backend

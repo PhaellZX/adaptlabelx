@@ -1,0 +1,26 @@
+# backend/.dockerignore
+
+# Ignorar o ambiente virtual
+venv/
+
+# Ignorar ficheiros de cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar ficheiros específicos do editor/SO
+.vscode/
+.git/
+.gitignore
+.dockerignore
+*.db
+
+# Ignorar ficheiros de configuração local
+.env
+
+# Ignorar uploads e modelos (numa app real, estes seriam volumes)
+# Vamos mantê-los fora da imagem por enquanto
+uploads/
+custom_models_user/
+ia_models/

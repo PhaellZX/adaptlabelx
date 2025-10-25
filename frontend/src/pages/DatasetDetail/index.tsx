@@ -3,30 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Button, Card, Row, Col, Form, Alert, Spinner } from 'react-bootstrap';
-import api from '../../services/api'; // Importa a instância do Axios (configurada para a porta 8001)
+import api from '../../services/api';
 import { AnnotationViewerModal } from '../../components/AnnotationViewerModal';
+// --- 1. IMPORTAR OS TIPOS GLOBAIS ---
+import { Image, Dataset } from '../../types'; 
 
-// --- Tipagem dos Dados (Completa) ---
-interface Annotation {
-    id: number;
-    class_label: string;
-    confidence: number;
-    geometry: any; // Flexível para bbox ou polígono
-}
-
-interface Image {
-    id: number;
-    file_name: string;
-    file_path: string;
-    annotations: Annotation[];
-}
-
-interface Dataset {
-    id: number;
-    name: string;
-    description: string;
-    images: Image[];
-}
+// --- 2. AS DEFINIÇÕES LOCAIS DE 'Annotation', 'Image' e 'Dataset' FORAM REMOVIDAS ---
 
 export function DatasetDetailPage() {
     const { datasetId } = useParams<{ datasetId: string }>();
@@ -37,8 +19,8 @@ export function DatasetDetailPage() {
     const [isAnnotating, setIsAnnotating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     
-    // --- Refs para a lógica de polling ---
-    const pollingRef = useRef<number>();
+    // --- 3. CORREÇÃO DO ERRO DA LINHA 41 ---
+    const pollingRef = useRef<number | undefined>(undefined); // Dar um valor inicial
     const initialTotalAnnsRef = useRef<number>(0);
     const previousTotalAnnsRef = useRef<number>(0);
     const pollCountRef = useRef<number>(0);
@@ -238,8 +220,12 @@ export function DatasetDetailPage() {
                     {dataset.images.map(image => (
                         <Col md={3} key={image.id} className="mb-3">
                             <Card onClick={() => handleImageClick(image)} style={{ cursor: 'pointer' }}>
-                                {/* Corrigido para a porta 8001 */}
-                                <Card.Img variant="top" src={`http://127.0.0.1:8000/${image.file_path}`} />
+                                <Card.Img 
+                                    variant="top" 
+                                    src={`http://127.0.0.1:8000/${image.file_path.replace(/\\/g, '/')}`} 
+                                    alt={image.file_name}
+                                    style={{ height: '200px', objectFit: 'cover' }}
+                                />
                                 <Card.Body>
                                     <Card.Text className="text-truncate">{image.file_name}</Card.Text>
                                     <Card.Text><strong>Anotações:</strong> {image.annotations.length}</Card.Text>
