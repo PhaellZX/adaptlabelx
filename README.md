@@ -1,5 +1,7 @@
 # 🚀 AdaptLabelX
 
+<img src="frontend/public/logo.png" alt="AdaptLabelX">
+
 **AdaptLabelX** é uma plataforma web inteligente para anotação automática de imagens, desenvolvida como um Trabalho de Conclusão de Curso (TCC). A ferramenta acelera o processo de rotulagem de datasets para visão computacional, permitindo que os usuários utilizem modelos de IA de ponta (como YOLOv8 e SAM) ou façam o upload dos seus próprios modelos customizados.
 
 ![Badge Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
