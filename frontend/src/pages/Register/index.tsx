@@ -14,19 +14,18 @@ export function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
     if (password !== confirmPassword) {
       setError('As senhas não coincidem.');
       return;
     }
 
     try {
-      // 1. Enviar os dados de registo para a rota correta: /users/
       await api.post('/users/', {
         email: email,
         password: password,
       });
-      
-      // 2. Se for bem-sucedido, redireciona para o login
       navigate('/'); 
     } catch (err: any) {
       console.error("Falha no cadastro:", err);
@@ -35,10 +34,20 @@ export function RegisterPage() {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-      <Card style={{ width: '400px' }}>
-        <Card.Body>
-          <h2 className="text-center mb-4">Cadastro</h2>
+    // --- A MUDANÇA ESTÁ AQUI ---
+    <Container fluid className="d-flex align-items-center justify-content-center bg-light h-100 animation-fade-in-up">
+      <Card className="shadow-lg border-0" style={{ width: '400px' }}>
+        <Card.Body className="p-4 p-md-5">
+          <div className="text-center mb-4">
+            <img
+              src="/logo.png"
+              alt="AdaptlabelX Logo"
+              className="d-block mx-auto mb-3"
+              style={{ width: '200px' }}
+            />
+            <h2 className="mb-0">Cadastro</h2>
+          </div>
+
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">

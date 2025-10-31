@@ -1,14 +1,10 @@
 // frontend/src/components/AnnotationViewerModal/index.tsx
-
 import { useEffect, useRef } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
-// --- 1. Importar os tipos centrais ---
+// Importar os tipos centrais
 import { Image, BoundingBox, Polygon } from '../../types';
 
-// --- 2. As definições de tipo locais foram REMOVIDAS daqui ---
-
-// --- 3. Atualizar as Props para usar o tipo importado ---
 interface AnnotationViewerModalProps {
     show: boolean;
     handleClose: () => void;
@@ -26,14 +22,17 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
             if (ctx) {
                 const img = new window.Image();
                 
-                // --- 4. Usar a porta correta (8000) e o replace() ---
-                img.src = `http://127.0.0.1:8000/${image.file_path.replace(/\\/g, '/')}`;
+                // --- ESTA É A CORREÇÃO DA URL DA IMAGEM ---
+                // O caminho deve ser /uploads/ + o file_path (ex: /uploads/1/img.jpg)
+                img.src = `/uploads/${image.file_path.replace(/\\/g, '/')}`;
+                // --- FIM DA CORREÇÃO ---
                 
                 img.onload = () => {
                     canvas.width = img.width;
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
 
+                    // Desenha as anotações
                     image.annotations.forEach(ann => {
                         const color = ann.annotation_type === 'segmentation' ? 'rgba(0, 255, 0, 0.8)' : 'red';
                         ctx.strokeStyle = color;
@@ -45,10 +44,12 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
                         let labelX = 0;
                         let labelY = 0;
 
-                        // --- 5. Usar os tipos importados para "casting" ---
                         if (ann.annotation_type === 'segmentation') {
-                            const polygon = ann.geometry as Polygon; // Usar o tipo Polygon importado
-                            if (polygon.length === 0) return;
+                            // O seu 'ia_service.py' (enviado) guarda polígonos como uma lista de pontos [[x,y], [x,y]]
+                            // A sua correção do schema 'annotation.py' (enviado) guarda-os em 'geometry'
+                            // Vamos assumir que 'ann.geometry' é a lista de pontos
+                            const polygon = ann.geometry as Polygon; 
+                            if (!polygon || polygon.length === 0) return;
                             
                             ctx.beginPath();
                             const startPoint = polygon[0];
@@ -66,8 +67,10 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
                             ctx.fill();
 
                         } else { // 'detection'
-                            const geometry = ann.geometry as BoundingBox; // Usar o tipo BoundingBox importado
+                            // O seu 'ia_service.py' (enviado) guarda bboxes como {'x': float, 'y': float, 'width': float, 'height': float}
+                            const geometry = ann.geometry as BoundingBox;
                             const { x, y, width, height } = geometry;
+                            // Converte de [centro_x, centro_y, w, h] (normalizado) para [x_min, y_min, w, h] (pixels)
                             const rectWidth = width * img.width;
                             const rectHeight = height * img.height;
                             const rectX = (x * img.width) - (rectWidth / 2);
@@ -78,18 +81,28 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
                             labelY = rectY;
                         }
                         
-                        ctx.fillStyle = color;
+                        // Desenha o rótulo (label)
+                        ctx.fillStyle = color; // Restaura a cor sólida para o texto
                         ctx.fillText(label, labelX, labelY > 10 ? labelY - 5 : 10);
                     });
                 };
+
+                img.onerror = () => {
+                    console.error("Falha ao carregar a imagem:", img.src);
+                    if (ctx) {
+                        ctx.fillStyle = "red";
+                        ctx.font = "16px Arial";
+                        ctx.fillText("Erro ao carregar imagem", 10, 50);
+                    }
+                }
             }
         }
-    }, [show, image]);
+    }, [show, image]); // O 'useEffect' corre sempre que a imagem ou 'show' mudam
 
     return (
         <Modal show={show} onHide={handleClose} size="lg" centered>
             <Modal.Header closeButton>
-                <Modal.Title>Visualizador de Anotações</Modal.Title>
+                <Modal.Title>{image ? image.file_name : 'Visualizador de Anotações'}</Modal.Title>
             </Modal.Header>
             <Modal.Body className="text-center" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
                 <canvas 

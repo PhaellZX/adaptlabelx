@@ -10,9 +10,10 @@ from typing import List, Optional, Dict, Any
 
 from app.models.dataset import Image
 from app.models.annotation import Annotation
+from app.services import custom_model_service
+from app.core.database import SessionLocal # (Necessário para modelos customizados)
 
 # --- Cache para Modelos Customizados ---
-# Isto evita recarregar o modelo .pt (que é lento) para cada imagem.
 custom_model_cache: Dict[str, Any] = {}
 
 # --- Modelos Padrão ---
@@ -26,117 +27,182 @@ def _get_model(model_path: str):
     Função auxiliar para carregar e fazer cache de modelos customizados.
     """
     if model_path in custom_model_cache:
-        # 1. Retorna o modelo do cache se já estiver carregado
         print(f"Carregando modelo customizado do cache: {model_path}")
         return custom_model_cache[model_path]
     
-    # 2. Se não, carrega do disco e armazena em cache
-    print(f"Carregando novo modelo customizado do disco: {model_path}")
-    try:
-        model = YOLO(model_path)
-        custom_model_cache[model_path] = model
-        return model
-    except Exception as e:
-        print(f"ERRO: Falha ao carregar modelo customizado {model_path}: {e}")
-        # Limpa o cache se falhar
-        if model_path in custom_model_cache:
-            del custom_model_cache[model_path]
+    print(f"Carregando modelo customizado do disco: {model_path}")
+    if not os.path.exists(model_path):
+        print(f"Erro: Modelo customizado não encontrado em {model_path}")
         return None
+        
+    model = YOLO(model_path)
+    custom_model_cache[model_path] = model
+    return model
 
 def run_model_on_image(
     image_path: str, 
-    model_type: str, 
+    model_type: str, # Recebe 'yolov8n_det', 'sam', ou um ID '1'
     selected_classes: Optional[List[str]] = None,
-    custom_model_path: Optional[str] = None # <-- Argumento principal
+    owner_id: Optional[int] = None # <--- 1. CORREÇÃO: ACEITAR O 'owner_id'
 ):
     """
-    Executa o modelo apropriado (padrão ou customizado) numa imagem.
+    Carrega o modelo correto e executa-o com o filtro de classes.
     """
-    
     model = None
-    
-    # --- 1. Determina qual modelo carregar ---
-    if custom_model_path:
-        model = _get_model(custom_model_path)
-        if model is None:
-            raise Exception(f"Não foi possível carregar o modelo customizado de {custom_model_path}")
-    elif model_type == 'sam':
-        # Pipeline SAM é especial, não usa a variável 'model' principal
-        pass
-    elif model_type == 'segmentation':
-        model = segmentation_model
-    else: # 'detection'
-        model = detection_model
-
-    # --- 2. Lógica de Filtro de Classes ---
-    # Isto agora funciona para QUALQUER modelo carregado (padrão ou customizado)
-    class_indices = []
+    model_names_map = None
     filter_args = {}
-    
-    # Determina o mapa de nomes correto (padrão, customizado, ou do detector para SAM)
-    model_names_map = {}
-    if model_type == 'sam' and not custom_model_path:
-        model_names_map = detection_model.names # SAM usa o detector padrão
-    elif model:
-        model_names_map = model.names # Modelo customizado ou padrão YOLO
-        
-    if selected_classes and model_names_map:
-        name_to_index_map = {v: k for k, v in model_names_map.items()}
-        class_indices = [name_to_index_map[name] for name in selected_classes if name in name_to_index_map]
-        print(f"Filtrando por classes: {selected_classes} (Índices: {class_indices})")
-        filter_args = {"classes": class_indices}
+    is_standard_model = False # Flag para a sua correção lógica
 
-    # --- 3. Executa o pipeline de anotação ---
-    if model_type == 'sam' and not custom_model_path:
-        # Pipeline SAM (usa o 'detection_model' com filtros)
-        print(f"Rodando pipeline SAM para: {image_path}")
-        det_results_list = detection_model(image_path, verbose=False, **filter_args)
-        det_results = det_results_list[0]
-        
-        if len(det_results.boxes) == 0:
-            print("Nenhum objeto detectado pelo YOLO, pulando SAM.")
-            return det_results
-        
-        sam_results_list = sam_model(image_path, bboxes=det_results.boxes.xyxy, verbose=False)
-        sam_results = sam_results_list[0]
-        
-        if sam_results.masks:
-            sam_results.names = det_results.names 
-            sam_results.boxes = det_results.boxes
-        
-        return sam_results
+    # 1. Determinar qual modelo carregar
+    if model_type == "yolov8n_det":
+        model = detection_model
+        model_names_map = model.names
+        is_standard_model = True
+    elif model_type == "yolov8n_seg":
+        model = segmentation_model
+        model_names_map = model.names
+        is_standard_model = True
+    elif model_type == "sam":
+        model = sam_model
+        model_names_map = detection_model.names 
+        is_standard_model = True
+    else:
+        # Lógica para Modelo Customizado (ex: model_type='1')
+        if owner_id is None:
+            print("Erro: owner_id é necessário para carregar um modelo customizado.")
+            return None
+        try:
+            db_temp = SessionLocal()
+            # --- 2. CORREÇÃO: USAR O 'owner_id' PARA BUSCAR O MODELO ---
+            custom_model = custom_model_service.get_model(
+                db_temp, 
+                model_id=int(model_type), 
+                owner_id=owner_id
+            )
+            db_temp.close()
+            
+            if custom_model:
+                model = _get_model(custom_model.file_path) # Carrega o .pt
+                if model:
+                    model_names_map = model.names
+            else:
+                 print(f"Erro: Modelo customizado com ID {model_type} não encontrado para o dono {owner_id}.")
+                 return None
+        except Exception as e:
+            print(f"Erro ao carregar modelo customizado {model_type}: {e}")
+            return None
+
+    if model is None:
+        print(f"Não foi possível carregar o modelo para {model_type}")
+        return None
     
+    # --- 3. CORREÇÃO LÓGICA (A SUA IDEIA) ---
+    # Só aplica o filtro de classes se for um modelo padrão
+    if selected_classes and model_names_map and is_standard_model:
+        class_indices = [
+            k for k, v in model_names_map.items() if v in selected_classes
+        ]
+        if class_indices:
+            print(f"Filtrando por classes: {selected_classes} (Índices: {class_indices})")
+            filter_args = {"classes": class_indices}
+        else:
+            print(f"Aviso: Classes {selected_classes} não encontradas no modelo.")
+    elif not is_standard_model:
+        print("Modelo customizado detectado. A anotar com todas as classes do modelo.")
+        filter_args = {} # Não filtra
+    # --- FIM DA CORREÇÃO LÓGICA ---
+
+    # 4. Executar o pipeline de anotação
+    if model_type == 'sam':
+        print("Executando pipeline SAM (YOLOv8 -> SAM)...")
+        det_results_list = detection_model(image_path, verbose=False, **filter_args)
+        if not det_results_list or not det_results_list[0].boxes:
+             print("SAM: Nenhum objeto de 'prompt' (YOLO) encontrado.")
+             return None
+        sam_results = sam_model.predict(image_path, bboxes=det_results_list[0].boxes.xyxy)
+        if sam_results and sam_results[0].masks:
+            sam_results[0].boxes = det_results_list[0].boxes 
+        return sam_results[0]
+        
     elif model:
-        # Pipeline Padrão (Detecção/Segmentação) ou Customizado
+        print(f"Executando modelo {model_type}...")
         return model(image_path, verbose=False, **filter_args)[0]
     
-    else:
-        raise Exception("Nenhum modelo válido foi determinado para anotação.")
+    return None
 
 
-def create_annotations_from_results(db: Session, db_image: Image, results, annotation_type: str):
+def create_annotations_from_results(
+    db: Session, 
+    results: Any, 
+    db_image: Image, 
+    model_id: str, # 'yolov8n_det', 'sam', ou '1'
+    owner_id: Optional[int] = None # <--- 4. CORREÇÃO: ACEITAR O 'owner_id'
+):
     """
-    Processa os resultados do modelo e cria os registros de anotação no banco.
-    (Esta função não precisa de mudanças, já é genérica)
+    Salva as anotações na base de dados.
     """
+    if results is None:
+        print(f"Nenhum resultado para salvar para a imagem {db_image.file_name}")
+        return []
+        
     new_annotations = []
-    class_names = results.names
-    
+    class_names = None
+    annotation_type = ""
+
+    # 1. Determinar o mapa de classes (class_names)
+    if model_id == "yolov8n_det":
+        class_names = detection_model.names
+        annotation_type = "detection"
+    elif model_id == "yolov8n_seg":
+        class_names = segmentation_model.names
+        annotation_type = "segmentation"
+    elif model_id == "sam":
+        class_names = detection_model.names
+        annotation_type = "segmentation"
+    else:
+        # Lógica para Modelo Customizado
+        if owner_id is None:
+            print("Erro: owner_id é necessário para salvar resultados de modelo customizado.")
+            return []
+        try:
+            db_temp = SessionLocal()
+            # --- 5. CORREÇÃO: USAR O 'owner_id' PARA BUSCAR O MODELO ---
+            custom_model = custom_model_service.get_model(
+                db_temp, 
+                model_id=int(model_id), 
+                owner_id=owner_id
+            )
+            db_temp.close()
+            if custom_model:
+                model = _get_model(custom_model.file_path)
+                if model:
+                    class_names = model.names
+                annotation_type = custom_model.model_type # 'detection' ou 'segmentation'
+        except Exception as e:
+            print(f"Não foi possível carregar 'names' para o modelo customizado {model_id}: {e}")
+
+    if class_names is None or not annotation_type:
+        print(f"Erro: Não foi possível determinar 'class_names' ou 'annotation_type' para o model_id {model_id}")
+        return []
+
+    # 2. Salvar as anotações com base no tipo
     if annotation_type == 'segmentation':
-        if results.masks is None: 
-            print("Resultados de segmentação não contêm máscaras.")
+        if results.masks is None or results.boxes is None:
+            print(f"Modelo {model_id} não produziu máscaras ou caixas.")
             return []
             
         for i, mask in enumerate(results.masks):
+            if i >= len(results.boxes): continue 
             class_id = int(results.boxes[i].cls[0])
-            confidence = float(results.boxes[i].conf[0])
-            polygon = mask.xyn[0].tolist()
+            if class_id not in class_names:
+                print(f"Erro: class_id {class_id} não encontrado no mapa de classes.")
+                continue
             
             db_annotation = Annotation(
                 annotation_type='segmentation', 
                 class_label=class_names[class_id],
-                confidence=confidence,
-                geometry=polygon,
+                confidence=float(results.boxes[i].conf[0]),
+                geometry=mask.xyn[0].tolist(),
                 image_id=db_image.id
             )
             db.add(db_annotation)
@@ -149,6 +215,10 @@ def create_annotations_from_results(db: Session, db_image: Image, results, annot
 
         for box in results.boxes:
             class_id = int(box.cls[0])
+            if class_id not in class_names:
+                print(f"Erro: class_id {class_id} não encontrado no mapa de classes.")
+                continue
+            
             x, y, w, h = box.xywhn[0]
             geometry_data = {"x": float(x), "y": float(y), "width": float(w), "height": float(h)}
             
@@ -161,10 +231,6 @@ def create_annotations_from_results(db: Session, db_image: Image, results, annot
             )
             db.add(db_annotation)
             new_annotations.append(db_annotation)
-    
-    if new_annotations:
-        db.commit()
-        for ann in new_annotations: 
-            db.refresh(ann)
             
+    print(f"Salvas {len(new_annotations)} novas anotações para a imagem {db_image.file_name}.")
     return new_annotations

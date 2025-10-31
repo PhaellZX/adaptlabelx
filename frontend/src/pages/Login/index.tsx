@@ -3,26 +3,23 @@
 import { useState } from 'react';
 import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext'; // 1. Importar o useAuth
+import { useAuth } from '../../contexts/AuthContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth(); // 2. Obter a função de login do contexto
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     try {
-      // 3. Chamar a função de login do AuthContext
       const success = await login(email, password);
-
       if (!success) {
         setError('Falha no login. Verifique seu email e senha.');
       }
-      // Se 'success' for true, o AuthContext irá tratar do redirecionamento
     } catch (err) {
       console.error(err);
       setError('Falha no login. Verifique seu email e senha.');
@@ -30,10 +27,20 @@ export function LoginPage() {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-      <Card style={{ width: '400px' }}>
-        <Card.Body>
-          <h2 className="text-center mb-4">Login</h2>
+    // --- A MUDANÇA ESTÁ AQUI ---
+    <Container fluid className="d-flex align-items-center justify-content-center bg-light h-100 animation-fade-in-up">
+      <Card className="shadow-lg border-0" style={{ width: '400px' }}>
+        <Card.Body className="p-4 p-md-5">
+          <div className="text-center mb-4">
+            <img
+              src="/logo.png"
+              alt="AdaptlabelX Logo"
+              className="d-block mx-auto mb-3" 
+              style={{ width: '200px' }}
+            />
+            <h2 className="mb-0">Login</h2>
+          </div>
+
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">

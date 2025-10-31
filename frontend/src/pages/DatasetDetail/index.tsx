@@ -5,10 +5,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Container, Button, Card, Row, Col, Form, Alert, Spinner } from 'react-bootstrap';
 import api from '../../services/api';
 import { AnnotationViewerModal } from '../../components/AnnotationViewerModal';
-// --- 1. IMPORTAR OS TIPOS GLOBAIS ---
 import { Image, Dataset } from '../../types'; 
-
-// --- 2. AS DEFINIÇÕES LOCAIS DE 'Annotation', 'Image' e 'Dataset' FORAM REMOVIDAS ---
 
 export function DatasetDetailPage() {
     const { datasetId } = useParams<{ datasetId: string }>();
@@ -19,8 +16,8 @@ export function DatasetDetailPage() {
     const [isAnnotating, setIsAnnotating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     
-    // --- 3. CORREÇÃO DO ERRO DA LINHA 41 ---
-    const pollingRef = useRef<number | undefined>(undefined); // Dar um valor inicial
+    // Refs para o polling
+    const pollingRef = useRef<number | undefined>(undefined);
     const initialTotalAnnsRef = useRef<number>(0);
     const previousTotalAnnsRef = useRef<number>(0);
     const pollCountRef = useRef<number>(0);
@@ -40,8 +37,20 @@ export function DatasetDetailPage() {
 
     // Efeito para buscar os dados iniciais e limpar o polling ao sair da página
     useEffect(() => {
+        // Limpa qualquer polling antigo antes de buscar
+        if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+        }
+        
+        setIsLoading(true);
         fetchDataset().finally(() => setIsLoading(false));
-        return () => clearInterval(pollingRef.current);
+        
+        // Função de limpeza ao desmontar o componente
+        return () => {
+            if (pollingRef.current) {
+                clearInterval(pollingRef.current);
+            }
+        };
     }, [datasetId]);
 
     // Função para lidar com a seleção de arquivos
@@ -52,6 +61,9 @@ export function DatasetDetailPage() {
     // Função para fazer o upload dos arquivos
     const handleUpload = async () => {
         if (!selectedFiles) return;
+        
+        setMessage('A enviar imagens...');
+        
         const formData = new FormData();
         for (let i = 0; i < selectedFiles.length; i++) {
             formData.append("files", selectedFiles[i]);
@@ -61,6 +73,10 @@ export function DatasetDetailPage() {
             setDataset(prev => prev ? { ...prev, images: [...prev.images, ...response.data] } : null);
             setMessage('Upload realizado com sucesso!');
             setSelectedFiles(null);
+            
+            const fileInput = document.getElementById('file-upload-input') as HTMLInputElement;
+            if (fileInput) fileInput.value = "";
+
         } catch (error) {
             console.error("Falha no upload:", error);
             setMessage('Erro no upload. Tente novamente.');
@@ -70,7 +86,7 @@ export function DatasetDetailPage() {
     // Função para iniciar a anotação automática
     const handleAnnotate = async () => {
         setIsAnnotating(true);
-        setMessage('Iniciando anotação em segundo plano... Isso pode levar alguns minutos.');
+        setMessage('Iniciando anotação... Isso pode levar alguns minutos.');
 
         const initialTotal = dataset?.images.reduce((sum, img) => sum + img.annotations.length, 0) || 0;
         initialTotalAnnsRef.current = initialTotal;
@@ -79,28 +95,36 @@ export function DatasetDetailPage() {
 
         try {
             await api.post(`/datasets/${datasetId}/annotate`);
+            
+            // Inicia o polling
             pollingRef.current = window.setInterval(async () => {
                 pollCountRef.current += 1;
                 const updatedDataset = await fetchDataset();
+                
                 if (updatedDataset) {
                     const newTotal = updatedDataset.images.reduce((sum: number, img: Image) => sum + img.annotations.length, 0);
+                    
                     if (newTotal > previousTotalAnnsRef.current) {
+                        // Se encontramos novas anotações, atualizamos a contagem
                         previousTotalAnnsRef.current = newTotal;
                     } else if (newTotal === previousTotalAnnsRef.current && newTotal > initialTotalAnnsRef.current) {
+                        // Se a contagem parou de aumentar (e é > 0), terminamos
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Anotações concluídas com sucesso!');
                     } else if (pollCountRef.current > 5 && newTotal === initialTotalAnnsRef.current) {
+                        // Se depois de ~25s não encontramos nada, paramos
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Anotação concluída. Nenhuma nova anotação encontrada.');
-                    } else if (pollCountRef.current > 120) {
+                    } else if (pollCountRef.current > 120) { // Timeout de 10 minutos
                         clearInterval(pollingRef.current);
                         setIsAnnotating(false);
                         setMessage('Processo de anotação expirou.');
                     }
                 }
-            }, 5000);
+            }, 5000); // Verifica a cada 5 segundos
+
         } catch (error) {
             console.error("Falha ao iniciar anotação:", error);
             setMessage('Erro ao iniciar o processo de anotação.');
@@ -137,21 +161,10 @@ export function DatasetDetailPage() {
     };
 
     // Funções específicas de download
-    const handleDownloadYolo = () => {
-        handleDownload(`/datasets/${datasetId}/export/yolo`, `dataset_${datasetId}_yolo.zip`);
-    };
-
-    const handleDownloadLabelMe = () => {
-        handleDownload(`/datasets/${datasetId}/export/labelme`, `dataset_${datasetId}_labelme.zip`);
-    };
-    
-    const handleDownloadCoco = () => {
-        handleDownload(`/datasets/${datasetId}/export/coco`, `dataset_${datasetId}_coco.zip`);
-    };
-    
-    const handleDownloadCvat = () => {
-        handleDownload(`/datasets/${datasetId}/export/cvat`, `dataset_${datasetId}_cvat.zip`);
-    };
+    const handleDownloadYolo = () => handleDownload(`/datasets/${datasetId}/export/yolo`, `dataset_${datasetId}_yolo.zip`);
+    const handleDownloadLabelMe = () => handleDownload(`/datasets/${datasetId}/export/labelme`, `dataset_${datasetId}_labelme.zip`);
+    const handleDownloadCoco = () => handleDownload(`/datasets/${datasetId}/export/coco`, `dataset_${datasetId}_coco.zip`);
+    const handleDownloadCvat = () => handleDownload(`/datasets/${datasetId}/export/cvat`, `dataset_${datasetId}_cvat.zip`);
 
     // Funções para controlar o modal
     const handleImageClick = (image: Image) => setSelectedImage(image);
@@ -180,7 +193,12 @@ export function DatasetDetailPage() {
                         <Card.Header>Fazer Upload de Novas Imagens</Card.Header>
                         <Card.Body>
                             <Form.Group>
-                                <Form.Control type="file" multiple onChange={handleFileChange} />
+                                <Form.Control 
+                                    type="file" 
+                                    multiple 
+                                    onChange={handleFileChange}
+                                    id="file-upload-input"
+                                />
                             </Form.Group>
                             <Button className="mt-3" onClick={handleUpload} disabled={!selectedFiles}>
                                 Enviar Imagens
@@ -206,6 +224,8 @@ export function DatasetDetailPage() {
                     </Card>
                 </div>
 
+                {message && <Alert variant={message.startsWith('Erro') ? 'danger' : 'info'}>{message}</Alert>}
+
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h2>Imagens do Dataset ({dataset.images.length})</h2>
                     <Button variant="success" onClick={handleAnnotate} disabled={isAnnotating || dataset.images.length === 0}>
@@ -214,18 +234,21 @@ export function DatasetDetailPage() {
                     </Button>
                 </div>
 
-                {message && <Alert variant="info">{message}</Alert>}
-
                 <Row>
                     {dataset.images.map(image => (
                         <Col md={3} key={image.id} className="mb-3">
                             <Card onClick={() => handleImageClick(image)} style={{ cursor: 'pointer' }}>
+                                
+                                {/* --- ESTA É A CORREÇÃO DA URL DA IMAGEM --- */}
+                                {/* O caminho deve ser /uploads/ + o file_path (ex: /uploads/1/img.jpg) */}
                                 <Card.Img 
                                     variant="top" 
-                                    src={`http://127.0.0.1:8000/${image.file_path.replace(/\\/g, '/')}`} 
+                                    src={`/uploads/${image.file_path.replace(/\\/g, '/')}`} 
                                     alt={image.file_name}
                                     style={{ height: '200px', objectFit: 'cover' }}
                                 />
+                                {/* --- FIM DA CORREÇÃO --- */}
+                                
                                 <Card.Body>
                                     <Card.Text className="text-truncate">{image.file_name}</Card.Text>
                                     <Card.Text><strong>Anotações:</strong> {image.annotations.length}</Card.Text>

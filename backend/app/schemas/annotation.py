@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+# backend/app/schemas/annotation.py
+
+from pydantic import BaseModel, ConfigDict # <--- 1. ADICIONAR O IMPORT DO CONFIGDICT
 from typing import Optional, Any
 
 class AnnotationBase(BaseModel):
@@ -14,5 +16,7 @@ class Annotation(AnnotationBase):
     image_id: int
     annotation_type: str
 
-    class Config:
-        from_attributes = True
+    # --- 2. ESTA É A CORREÇÃO PARA O PYDANTIC V2 ---
+    # Trocamos "class Config:" por "model_config ="
+    model_config = ConfigDict(from_attributes=True)
+    # --- FIM DA CORREÇÃO ---

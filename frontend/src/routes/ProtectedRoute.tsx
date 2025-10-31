@@ -1,28 +1,43 @@
 // frontend/src/routes/ProtectedRoute.tsx
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Spinner } from 'react-bootstrap';
-import { ReactNode } from 'react'; // <--- 1. Importar o ReactNode
+import { Spinner, Container } from 'react-bootstrap'; // <--- 1. Importar o Container
+import { ReactNode } from 'react';
+import { AppNavbar } from '../components/AppNavbar';
+import { Footer } from '../components/Footer';
 
-export const ProtectedRoute = ({ children }: { children: ReactNode }) => { // <--- 2. Esta é a correção
+export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    // Se o AuthContext está 'loading' (a verificar o token
-    // ou a processar o login), esperamos.
+    // O seu 'loading' está perfeito, mostra o layout
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <Spinner animation="border" />
-      </div>
+      <>
+        <AppNavbar />
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '80vh' }}>
+          <Spinner animation="border" />
+        </Container>
+        <Footer />
+      </>
     );
   }
 
   if (!user) {
-    // Se NÃO está a carregar E o 'user' é 'null',
-    // então o utilizador não está mesmo logado. Redireciona.
+    // Se não está a carregar e não há utilizador, redireciona
     return <Navigate to="/" replace />;
   }
 
-  // Se NÃO está a carregar E 'user' existe, mostra a página.
-  return children;
+  // --- 2. ESTA É A CORREÇÃO ---
+  // Se não está a carregar E o 'user' existe, MOSTRA O LAYOUT
+  // e "embrulha" os 'children' (a sua página)
+  return (
+    <>
+      <AppNavbar />
+      <Container as="main" className="py-4" style={{ minHeight: '80vh' }}>
+        {children} {/* <-- Aqui é onde o DashboardPage/DatasetDetailPage/etc. aparecem */}
+      </Container>
+      <Footer />
+    </>
+  );
+  // --- FIM DA CORREÇÃO ---
 };

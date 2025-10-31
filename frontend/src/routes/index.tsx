@@ -1,23 +1,52 @@
 // frontend/src/routes/index.tsx
 import { Routes, Route } from 'react-router-dom';
-// NÃO importe o Router ou AuthProvider aqui
 import { LoginPage } from '../pages/Login';
 import { RegisterPage } from '../pages/Register';
 import { DashboardPage } from '../pages/Dashboard';
-import { ProtectedRoute } from './ProtectedRoute';
+import { ProtectedRoute } from './ProtectedRoute'; // O seu ficheiro (enviado) chama-se 'PrivateRoute.tsx'
+                                                // Vou usar o nome 'ProtectedRoute' que está no seu import
 import { DatasetDetailPage } from '../pages/DatasetDetail'; 
+
+// --- 1. IMPORTAR A NOVA PÁGINA ---
+// (Nós vamos criar esta página no próximo passo)
 import { CustomModelsPage } from '../pages/CustomModels';
 
 export function AppRoutes() {
   return (
-    // O <Router> e <AuthProvider> já estão no App.tsx
-    <Routes> 
+    <Routes>
+      {/* Rotas Públicas */}
       <Route path="/" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="/datasets/:datasetId" element={<ProtectedRoute><DatasetDetailPage /></ProtectedRoute>} />
-      <Route path="/models" element={<ProtectedRoute><CustomModelsPage /></ProtectedRoute>} />
+      {/* Rotas Protegidas */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/datasets/:datasetId" 
+        element={
+          <ProtectedRoute>
+            <DatasetDetailPage />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* --- 2. ADICIONAR A NOVA ROTA DE MODELOS --- */}
+      <Route 
+        path="/models" 
+        element={
+          <ProtectedRoute>
+            <CustomModelsPage />
+          </ProtectedRoute>
+        } 
+      />
+      {/* --- FIM DA NOVA ROTA --- */}
+      
     </Routes>
   );
 }

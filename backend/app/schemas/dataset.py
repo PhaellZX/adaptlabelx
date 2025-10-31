@@ -1,7 +1,9 @@
-from pydantic import BaseModel
+# backend/app/schemas/dataset.py
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Any
 from .annotation import Annotation
-from app.schemas.custom_model import CustomModel
+# Não precisamos mais do CustomModel aqui, pois o model_id é uma string
+# from app.schemas.custom_model import CustomModel # <--- REMOVIDO
 
 # --- Schemas para Imagem ---
 class ImageBase(BaseModel):
@@ -15,8 +17,8 @@ class Image(ImageBase):
     file_path: str
     annotations: List[Annotation] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 # --- Schemas para Dataset ---
 class DatasetBase(BaseModel):
@@ -24,9 +26,8 @@ class DatasetBase(BaseModel):
     description: Optional[str] = None
 
 class DatasetCreate(DatasetBase):
-    annotation_type: str = "detection"
-    selected_classes: Optional[List[str]] = None
-    custom_model_id: Optional[int] = None
+    model_id: Optional[str] = None 
+    classes_to_annotate: Optional[List[str]] = None
 
 class DatasetUpdate(DatasetBase):
     pass
@@ -34,8 +35,13 @@ class DatasetUpdate(DatasetBase):
 class Dataset(DatasetBase):
     id: int
     owner_id: int
-    images: List[Image] = [] # Retorna a lista de imagens junto com o dataset
-    custom_model: Optional[CustomModel] = None
+    images: List[Image] = [] 
+    
+    # --- A CORREÇÃO ESTÁ AQUI ---
+    # Remover o campo "fantasma" que não existe na tabela da BD
+    # custom_model: Optional[CustomModel] = None # <--- REMOVIDO
+    
+    # Adicionar o model_id à resposta (para que o frontend saiba qual modelo foi salvo)
+    model_id: Optional[str] = None 
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

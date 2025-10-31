@@ -1,40 +1,47 @@
+# backend/main.py
+import os # <--- 1. IMPORTAR 'os'
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles # <--- 2. IMPORTAR 'StaticFiles'
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.database import engine
-from app.core.base import Base
-from app.api.endpoints import users, auth, datasets, models, custom_models
-from app.models import user, dataset, annotation, custom_model
-from fastapi.staticfiles import StaticFiles
 
-# Cria todas as tabelas no banco de dados (em um cenário real, use Alembic para migrations)
+from app.core.database import engine, Base
+# Importar todos os seus endpoints
+from app.api.endpoints import users, auth, datasets, models, custom_models
+# Importar os seus modelos da BD para que o create_all funcione
+from app.models import user, dataset, annotation, custom_model
+
+# Criar tabelas (Isto agora vai criar as tabelas corrigidas)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="AdaptlabelX API")
+app = FastAPI(title="AdaptLabelX API")
 
-# --- CONFIGURAÇÃO DO CORS --- #
+# --- 3. ESTA É A CORREÇÃO QUE FALTAVA ---
+# Criar a pasta 'uploads' se ela não existir
+os.makedirs("uploads", exist_ok=True)
 
-# Lista de origens permitidas (endereços do seu frontend)
-origins = [
-    "http://localhost:5173",
-]
+# Montar o diretório 'uploads' para ser servido publicamente
+# Agora, o pedido do Nginx para "http://backend:8000/uploads/file.png"
+# irá servir o ficheiro "backend/uploads/file.png"
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# --- FIM DA CORREÇÃO ---
 
+
+# Configuração do CORS (Middleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"], # Permite todas as origens
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc.)
-    allow_headers=["*"],  # Permite todos os cabeçalhos
+    allow_methods=["*"], # Permite todos os métodos
+    allow_headers=["*"], # Permite todos os headers
 )
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
-# -------------- ROTAS -------------- #
-app.include_router(users.router, prefix="/users", tags=["Users"])
-app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(datasets.router, prefix="/datasets", tags=["Datasets"])
-app.include_router(models.router, prefix="/models", tags=["Models"])
-app.include_router(custom_models.router, prefix="/custom-models", tags=["Custom Models"])
+# Incluir os routers da API
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(datasets.router, prefix="/datasets", tags=["datasets"])
+app.include_router(custom_models.router, prefix="/custom-models", tags=["custom_models"])
+app.include_router(models.router, prefix="/models", tags=["models"]) 
 
 @app.get("/")
 def read_root():
-    return {"message": "Bem-vindo à API do AdaptlabelX!"}
+    return {"message": "Bem-vindo à API AdaptLabelX"}

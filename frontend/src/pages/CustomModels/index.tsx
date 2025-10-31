@@ -1,8 +1,7 @@
 // frontend/src/pages/CustomModels/index.tsx
 import { useState, useEffect } from 'react';
 import { Container, Button, Form, Card, Row, Col, Alert, ListGroup, Spinner } from 'react-bootstrap';
-import api from '../../services/api';
-import { AppNavbar } from '../../components/AppNavbar'; // Importar nosso Navbar
+import api from '../../services/api'; 
 
 // Tipagem para o modelo customizado
 interface CustomModel {
@@ -89,7 +88,6 @@ export function CustomModelsPage() {
 
   return (
     <>
-      <AppNavbar />
       <Container>
         {message && <Alert variant={message.includes('sucesso') ? 'success' : 'danger'}>{message}</Alert>}
         

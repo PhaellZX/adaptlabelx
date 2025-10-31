@@ -1,5 +1,5 @@
 # backend/app/schemas/custom_model.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict # <--- 1. ADICIONAR O IMPORT DO CONFIGDICT
 from typing import Optional
 
 class CustomModelBase(BaseModel):
@@ -14,5 +14,7 @@ class CustomModel(CustomModelBase):
     file_path: str
     owner_id: int
 
-    class Config:
-        from_attributes = True
+    # --- 2. ESTA É A CORREÇÃO PARA O PYDANTIC V2 ---
+    # Trocamos "class Config:" por "model_config ="
+    model_config = ConfigDict(from_attributes=True)
+    # --- FIM DA CORREÇÃO ---

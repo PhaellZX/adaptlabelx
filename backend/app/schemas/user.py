@@ -1,6 +1,6 @@
 # backend/app/schemas/user.py
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict # <--- 1. ADICIONAR O IMPORT DO CONFIGDICT
 from typing import Optional
 
 # --- UserBase ---
@@ -25,9 +25,10 @@ class UserUpdate(UserBase):
 # O que devolvemos ao frontend (o nosso "response_model")
 class User(UserBase):
     id: int
-    is_active: bool       # <--- CAMPO ADICIONADO
-    is_superuser: bool    # <--- CAMPO ADICIONADO
+    is_active: bool
+    is_superuser: bool
 
-    class Config:
-        # Permite ao Pydantic ler os dados a partir de um modelo SQLAlchemy
-        from_attributes = True
+    # --- 2. ESTA É A CORREÇÃO PARA O PYDANTIC V2 ---
+    # Trocamos "class Config:" por "model_config ="
+    model_config = ConfigDict(from_attributes=True)
+    # --- FIM DA CORREÇÃO ---
