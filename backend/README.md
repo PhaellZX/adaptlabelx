@@ -37,7 +37,7 @@ backend/
 Para executar o backend, é necessário um ficheiro `.env` na raiz do projeto (junto ao `docker-compose.yml`) com as seguintes variáveis:
 
 ### dotenv:
-### Chave secreta para JWT (gere uma com 'openssl rand -hex 32')
+Chave secreta para JWT (gere uma com 'openssl rand -hex 32')
 ```
 SECRET_KEY=sua_chave_secreta_super_segura
 ```
@@ -48,8 +48,8 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
-### URL de Conexão com o Banco de Dados (Neon)
-### Ex: postgresql://user:password@host.neon.tech/dbname?sslmode=require
+URL de Conexão com o Banco de Dados (Neon)
+Ex: postgresql://user:password@host.neon.tech/dbname?sslmode=require
 ```
 DATABASE_URL=seu_url_do_neon_aqui
 ```
