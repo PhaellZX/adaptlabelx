@@ -1,5 +1,3 @@
-// frontend/src/pages/Login/index.tsx
-
 import { useState } from 'react';
 import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
@@ -27,7 +25,6 @@ export function LoginPage() {
   };
 
   return (
-    // --- A MUDANÇA ESTÁ AQUI ---
     <Container fluid className="d-flex align-items-center justify-content-center bg-light h-100 animation-fade-in-up">
       <Card className="shadow-lg border-0" style={{ width: '400px' }}>
         <Card.Body className="p-4 p-md-5">

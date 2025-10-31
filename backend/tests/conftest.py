@@ -1,4 +1,3 @@
-# backend/tests/conftest.py
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,11 +7,8 @@ from sqlalchemy.pool import StaticPool
 from main import app # Importa a sua app principal
 from app.core.database import get_db, Base
 
-# --- ESTA É A CORREÇÃO ---
 # Importar os seus modelos a partir de 'app.models' (como no seu main.py)
 from app.models import user, dataset, annotation, custom_model
-# --- FIM DA CORREÇÃO ---
-
 
 # --- 1. Configurar a Base de Dados de Teste (SQLite em memória) ---
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -25,7 +21,6 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # --- 2. Criar as tabelas na BD de teste ---
-# (Agora o 'Base' conhece os seus modelos graças à importação correta)
 Base.metadata.create_all(bind=engine)
 
 # --- 3. Criar a "falsa" função get_db para os testes ---

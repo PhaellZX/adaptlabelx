@@ -1,4 +1,3 @@
-# backend/app/api/endpoints/custom_models.py
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
@@ -28,13 +27,11 @@ def upload_new_model(
     
     model_in = CustomModelCreate(name=name, model_type=model_type)
     
-    # O seu 'custom_model_service.py' (enviado) está perfeito e tem esta função
     model = custom_model_service.create_model(
         db=db, model_in=model_in, file=file, owner_id=current_user.id
     )
     return model
 
-# --- ROTA GET (LISTAR) QUE FALTAVA ---
 @router.get("/", response_model=List[CustomModel])
 def read_user_models(
     db: Session = Depends(get_db),
@@ -44,11 +41,9 @@ def read_user_models(
     Lista todos os modelos customizados do usuário logado.
     (Esta é a rota que o seu Modal vai chamar)
     """
-    # O seu 'custom_model_service.py' (enviado) já tem esta função
+    
     return custom_model_service.get_models_by_owner(db=db, owner_id=current_user.id)
-# --- FIM DA ROTA GET ---
 
-# --- ROTA DELETE (APAGAR) QUE FALTAVA ---
 @router.delete("/{model_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user_model(
     model_id: int,
@@ -58,7 +53,6 @@ def delete_user_model(
     """
     Apaga um modelo customizado do usuário logado.
     """
-    # O seu 'custom_model_service.py' (enviado) já tem esta função
+
     custom_model_service.delete_model(db=db, model_id=model_id, owner_id=current_user.id)
     return {"message": "Modelo apagado com sucesso."} # O status 204 não devolve corpo
-# --- FIM DA ROTA DELETE ---

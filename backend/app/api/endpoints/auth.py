@@ -1,5 +1,3 @@
-# backend/app/api/endpoints/auth.py
-
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,7 +9,7 @@ from passlib.context import CryptContext
 from app.core.database import get_db
 from app.schemas.token import Token
 from app.services import user_service
-from app.core.config import settings # <--- MUDANÇA PRINCIPAL
+from app.core.config import settings
 
 router = APIRouter()
 

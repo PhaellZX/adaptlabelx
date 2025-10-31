@@ -1,14 +1,12 @@
-// frontend/src/routes/index.tsx
 import { Routes, Route } from 'react-router-dom';
 import { LoginPage } from '../pages/Login';
 import { RegisterPage } from '../pages/Register';
 import { DashboardPage } from '../pages/Dashboard';
-import { ProtectedRoute } from './ProtectedRoute'; // O seu ficheiro (enviado) chama-se 'PrivateRoute.tsx'
-                                                // Vou usar o nome 'ProtectedRoute' que está no seu import
+import { ProtectedRoute } from './ProtectedRoute'; 
+                                                
 import { DatasetDetailPage } from '../pages/DatasetDetail'; 
 
 // --- 1. IMPORTAR A NOVA PÁGINA ---
-// (Nós vamos criar esta página no próximo passo)
 import { CustomModelsPage } from '../pages/CustomModels';
 
 export function AppRoutes() {

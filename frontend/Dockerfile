@@ -1,5 +1,3 @@
-# frontend/Dockerfile
-
 # --- STAGE 1: Construir a aplicação React ---
 FROM node:18-alpine AS build
 

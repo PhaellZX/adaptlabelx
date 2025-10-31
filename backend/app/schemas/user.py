@@ -1,6 +1,4 @@
-# backend/app/schemas/user.py
-
-from pydantic import BaseModel, EmailStr, ConfigDict # <--- 1. ADICIONAR O IMPORT DO CONFIGDICT
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional
 
 # --- UserBase ---
@@ -28,7 +26,4 @@ class User(UserBase):
     is_active: bool
     is_superuser: bool
 
-    # --- 2. ESTA É A CORREÇÃO PARA O PYDANTIC V2 ---
-    # Trocamos "class Config:" por "model_config ="
     model_config = ConfigDict(from_attributes=True)
-    # --- FIM DA CORREÇÃO ---

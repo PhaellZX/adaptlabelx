@@ -1,5 +1,3 @@
-// frontend/src/types/index.ts
-
 // Geometria de detecção (bbox)
 export interface BoundingBox {
   x: number;

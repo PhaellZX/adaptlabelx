@@ -1,4 +1,3 @@
-// frontend/src/pages/CustomModels/index.tsx
 import { useState, useEffect } from 'react';
 import { Container, Button, Form, Card, Row, Col, Alert, ListGroup, Spinner } from 'react-bootstrap';
 import api from '../../services/api'; 

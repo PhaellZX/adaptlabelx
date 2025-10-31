@@ -1,4 +1,3 @@
-// frontend/src/components/Footer/index.tsx
 import { Container } from 'react-bootstrap';
 
 export function Footer() {

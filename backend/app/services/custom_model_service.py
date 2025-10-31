@@ -1,4 +1,3 @@
-# backend/app/services/custom_model_service.py
 import os
 import shutil
 from fastapi import UploadFile, HTTPException

@@ -1,4 +1,3 @@
-// frontend/src/routes/ProtectedLayout.tsx
 import { Outlet } from 'react-router-dom';
 import { AppNavbar } from '../components/AppNavbar';
 import { Footer } from '../components/Footer';

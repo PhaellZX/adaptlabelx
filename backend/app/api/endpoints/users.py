@@ -1,5 +1,3 @@
-# backend/app/api/endpoints/users.py
-
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -25,7 +23,6 @@ def create_new_user(user: UserCreate, db: Session = Depends(get_db)):
         )
     return user_service.create_user(db=db, user=user)
 
-# NOVA ROTA PROTEGIDA
 @router.get("/me", response_model=User)
 def read_users_me(current_user: User = Depends(get_current_user)):
     """

@@ -1,14 +1,11 @@
-# backend/app/api/endpoints/datasets.py
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks 
 from sqlalchemy.orm import Session
 import os 
 import io
-
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
 from app.models.user import User
-# Corrigir imports (o schema de Imagem vem de dataset, o modelo vem de dataset)
 from app.schemas.dataset import Dataset, DatasetCreate, Image as SchemaImage
 from app.models.dataset import Image as ModelImage
 from app.services import dataset_service
@@ -98,19 +95,13 @@ def start_annotation_route(
     if db_dataset.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Não autorizado")
 
-    # --- A CORREÇÃO DO BUG (Sessão Morta / TypeError) ---
-    # O 'dataset_service.run_annotation_for_dataset' agora
-    # cria a sua própria sessão, por isso NÃO passamos 'db'
     background_tasks.add_task(
         dataset_service.run_annotation_for_dataset, 
-        dataset_id=dataset_id # <--- Removido o argumento 'db=db'
+        dataset_id=dataset_id 
     )
-    # --- FIM DA CORREÇÃO ---
 
     return {"message": "Processo de anotação iniciado em segundo plano."}
 
-
-# --- Rotas de Exportação (O seu código original está perfeito) ---
 
 @router.get("/{dataset_id}/export/yolo", response_class=StreamingResponse)
 def export_dataset_annotations_yolo(

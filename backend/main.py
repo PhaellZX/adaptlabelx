@@ -1,7 +1,6 @@
-# backend/main.py
-import os # <--- 1. IMPORTAR 'os'
+import os
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles # <--- 2. IMPORTAR 'StaticFiles'
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import engine, Base
@@ -15,7 +14,6 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AdaptLabelX API")
 
-# --- 3. ESTA É A CORREÇÃO QUE FALTAVA ---
 # Criar a pasta 'uploads' se ela não existir
 os.makedirs("uploads", exist_ok=True)
 
@@ -23,8 +21,6 @@ os.makedirs("uploads", exist_ok=True)
 # Agora, o pedido do Nginx para "http://backend:8000/uploads/file.png"
 # irá servir o ficheiro "backend/uploads/file.png"
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-# --- FIM DA CORREÇÃO ---
-
 
 # Configuração do CORS (Middleware)
 app.add_middleware(

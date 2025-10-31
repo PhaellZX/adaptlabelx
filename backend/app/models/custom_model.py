@@ -1,4 +1,3 @@
-# backend/app/models/custom_model.py
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.base import Base

@@ -1,9 +1,6 @@
-# backend/Dockerfile
-
 # 1. Usar a imagem oficial do Python
 FROM python:3.11-slim
 
-# --- 2. ETAPA CORRIGIDA ---
 # Instalar as dependências do sistema operacional (Linux)
 # que são necessárias para o OpenCV (cv2)
 RUN apt-get update && apt-get install -y \
@@ -11,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
-# --- FIM DA NOVA ETAPA ---
 
 # 3. Definir o diretório de trabalho
 WORKDIR /app

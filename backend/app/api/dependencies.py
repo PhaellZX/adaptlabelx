@@ -1,9 +1,8 @@
-# backend/app/api/dependencies.py
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from app.core.config import settings # <--- 1. Importar 'settings'
+from app.core.config import settings 
 from app.core.database import get_db
 from app.models.user import User
 from app.services import user_service

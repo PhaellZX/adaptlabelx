@@ -1,8 +1,6 @@
-// frontend/src/pages/Dashboard/index.tsx
-
 import { useState, useEffect } from 'react';
 import { Container, Button, Card, Row, Col, Spinner, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom'; // O import continua correto
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { CreateDatasetModal } from '../../components/CreateDatasetModal';
 // Importe o seu tipo de Dataset (se o tiver num ficheiro central)
@@ -80,7 +78,6 @@ export function DashboardPage() {
                       {dataset.description || 'Sem descrição.'}
                     </Card.Text>
                     
-                    {/* --- ESTA É A CORREÇÃO (LINHA 99) --- */}
                     <div className="d-flex justify-content-end gap-2 mt-3">
                       
                       {/* 1. O Link "embrulha" o Botão.
@@ -105,7 +102,6 @@ export function DashboardPage() {
                         Excluir
                       </Button>
                     </div>
-                    {/* --- FIM DA CORREÇÃO --- */}
                     
                   </Card.Body>
                 </Card>

@@ -1,4 +1,3 @@
-# backend/app/services/dataset_service.py
 import os
 import shutil
 from fastapi import UploadFile, HTTPException
@@ -22,7 +21,7 @@ from app.core.database import SessionLocal
 
 UPLOAD_DIRECTORY = "uploads"
 
-# --- Funções de CRUD (O seu código original está perfeito) ---
+# --- Funções de CRUD ---
 def create_dataset(db: Session, dataset: DatasetCreate, owner_id: int):
     """Cria um novo dataset no banco de dados."""
     db_dataset = Dataset(**dataset.model_dump(), owner_id=owner_id)
@@ -80,7 +79,7 @@ def delete_dataset(db: Session, dataset_id: int, owner_id: int):
     db.commit()
     return True
 
-# --- 2. FUNÇÃO "GERENTE" (Corrigida para o bug da "sessão morta" E 'owner_id') ---
+# --- 2. FUNÇÃO "GERENTE" ---
 def run_annotation_for_dataset(dataset_id: int): 
     """
     O "Gerente": Pega no dataset, faz o loop e chama o "Trabalhador de IA"
@@ -97,7 +96,7 @@ def run_annotation_for_dataset(dataset_id: int):
             print(f"Dataset {dataset_id} não encontrado ou sem modelo.")
             return
 
-        # Busca as imagens que ainda não têm anotações (o bug "estranho")
+        # Busca as imagens que ainda não têm anotações
         images_to_annotate = db.query(Image).filter(
             Image.dataset_id == dataset_id,
             ~Image.annotations.any() 
@@ -116,13 +115,12 @@ def run_annotation_for_dataset(dataset_id: int):
                 continue
                 
             try:
-                # --- 3. A CORREÇÃO DO BUG 'owner_id' (Parte 1) ---
                 # Passar o owner_id para o "Trabalhador de IA"
                 results = ia_service.run_model_on_image(
                     image_path=image_path,
                     model_type=db_dataset.model_id, 
                     selected_classes=db_dataset.classes_to_annotate,
-                    owner_id=db_dataset.owner_id # <--- ARGUMENTO ADICIONADO
+                    owner_id=db_dataset.owner_id 
                 )
                 
                 ia_service.create_annotations_from_results(
@@ -130,14 +128,12 @@ def run_annotation_for_dataset(dataset_id: int):
                     results, 
                     db_image, 
                     db_dataset.model_id,
-                    owner_id=db_dataset.owner_id # <--- ARGUMENTO ADICIONADO
+                    owner_id=db_dataset.owner_id 
                 )
-                # --- FIM DA CORREÇÃO ---
                 
                 db.commit() 
                 
             except Exception as e:
-                # O seu log ('missing owner_id') apareceu aqui
                 print(f"Erro ao processar a imagem {db_image.file_name}: {e}")
                 db.rollback() 
 
@@ -148,7 +144,7 @@ def run_annotation_for_dataset(dataset_id: int):
         print(f"Tarefa de anotação concluída para o dataset {dataset_id}.")
         db.close() # Fecha a sessão "viva"
 
-# --- Funções de Exportação (O seu código original está perfeito) ---
+# --- Funções de Exportação ---
 
 def export_annotations_yolo(db: Session, db_dataset: Dataset):
     zip_buffer = io.BytesIO()
@@ -209,8 +205,7 @@ def export_annotations_labelme(db: Session, db_dataset: Dataset):
                 
                 if ann.annotation_type == 'segmentation':
                     shape["shape_type"] = "polygon"
-                    # O seu 'ia_service.py' (enviado) guarda a geometria de polígono
-                    # como uma lista simples de pontos [x, y], [x, y]
+    
                     points = [
                         [p[0] * img_width, p[1] * img_height] for p in ann.geometry
                     ]
@@ -282,7 +277,7 @@ def export_annotations_coco(db: Session, db_dataset: Dataset):
             
             if ann.annotation_type == 'segmentation':
                 segmentation_flat = []
-                for p in ann.geometry: # O seu 'ia_service.py' (enviado) guarda como lista de pontos
+                for p in ann.geometry:
                     segmentation_flat.extend([p[0] * img_width, p[1] * img_height])
                 
                 x_coords = [p[0] * img_width for p in ann.geometry]
@@ -354,7 +349,7 @@ def export_annotations_cvat(db: Session, db_dataset: Dataset):
             
             if ann.annotation_type == 'segmentation':
                 points_list = []
-                for p in ann.geometry: # O seu 'ia_service.py' (enviado) guarda como lista de pontos
+                for p in ann.geometry: 
                     x_abs = p[0] * img_width
                     y_abs = p[1] * img_height
                     points_list.append(f"{x_abs:.2f},{y_abs:.2f}")

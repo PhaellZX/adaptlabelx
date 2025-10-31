@@ -1,5 +1,3 @@
-# backend/.dockerignore
-
 # Ignorar o ambiente virtual
 venv/
 
@@ -20,7 +18,6 @@ __pycache__/
 .env
 
 # Ignorar uploads e modelos (numa app real, estes seriam volumes)
-# Vamos mantê-los fora da imagem por enquanto
 uploads/
 custom_models_user/
 ia_models/

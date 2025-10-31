@@ -1,7 +1,6 @@
-# backend/app/models/dataset.py
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import ARRAY # <-- 1. IMPORTAR O TIPO ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from app.core.database import Base
 
@@ -16,12 +15,8 @@ class Dataset(Base):
     owner = relationship("User", back_populates="datasets")
     images = relationship("Image", back_populates="dataset", cascade="all, delete-orphan")
     
-    # --- 2. ADICIONAR O CAMPO 'model_id' (SE AINDA NÃO EXISTIR) ---
-    # Isto é o que liga ao modelo (ex: 'yolov8n_det' ou o ID de um modelo customizado)
     model_id = Column(String, nullable=True) 
 
-    # --- 3. ADICIONAR A NOVA COLUNA PARA AS CLASSES ---
-    # Isto irá armazenar a sua lista ['dog', 'cat']
     classes_to_annotate = Column(ARRAY(String), nullable=True)
 
 

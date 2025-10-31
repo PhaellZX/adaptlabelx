@@ -1,7 +1,6 @@
-// frontend/src/routes/ProtectedRoute.tsx
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Spinner, Container } from 'react-bootstrap'; // <--- 1. Importar o Container
+import { Spinner, Container } from 'react-bootstrap'; 
 import { ReactNode } from 'react';
 import { AppNavbar } from '../components/AppNavbar';
 import { Footer } from '../components/Footer';
@@ -10,7 +9,6 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    // O seu 'loading' está perfeito, mostra o layout
     return (
       <>
         <AppNavbar />
@@ -27,9 +25,6 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     return <Navigate to="/" replace />;
   }
 
-  // --- 2. ESTA É A CORREÇÃO ---
-  // Se não está a carregar E o 'user' existe, MOSTRA O LAYOUT
-  // e "embrulha" os 'children' (a sua página)
   return (
     <>
       <AppNavbar />
@@ -39,5 +34,4 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
       <Footer />
     </>
   );
-  // --- FIM DA CORREÇÃO ---
 };

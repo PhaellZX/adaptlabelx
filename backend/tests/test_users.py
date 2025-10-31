@@ -1,7 +1,4 @@
-# backend/tests/test_users.py
 from fastapi.testclient import TestClient
-
-# Não precisamos de importar 'client', o pytest injeta-o a partir do conftest.py
 
 def test_create_user(client: TestClient):
     """
@@ -33,7 +30,5 @@ def test_create_duplicate_user(client: TestClient):
     
     data = response.json()
     
-    # --- ESTA É A CORREÇÃO ---
     # Verificar a mensagem de erro em Português
     assert data["detail"] == "Email já registrado."
-    # --- FIM DA CORREÇÃO ---

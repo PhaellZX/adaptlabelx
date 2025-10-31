@@ -1,5 +1,3 @@
-// frontend/src/pages/DatasetDetail/index.tsx
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Button, Card, Row, Col, Form, Alert, Spinner } from 'react-bootstrap';
@@ -239,15 +237,12 @@ export function DatasetDetailPage() {
                         <Col md={3} key={image.id} className="mb-3">
                             <Card onClick={() => handleImageClick(image)} style={{ cursor: 'pointer' }}>
                                 
-                                {/* --- ESTA É A CORREÇÃO DA URL DA IMAGEM --- */}
-                                {/* O caminho deve ser /uploads/ + o file_path (ex: /uploads/1/img.jpg) */}
                                 <Card.Img 
                                     variant="top" 
                                     src={`/uploads/${image.file_path.replace(/\\/g, '/')}`} 
                                     alt={image.file_name}
                                     style={{ height: '200px', objectFit: 'cover' }}
                                 />
-                                {/* --- FIM DA CORREÇÃO --- */}
                                 
                                 <Card.Body>
                                     <Card.Text className="text-truncate">{image.file_name}</Card.Text>

@@ -17,4 +17,3 @@ psycopg2-binary
 python-dotenv
 pytest
 httpx
-# Comentário para forçar o Docker a invalidar o cache

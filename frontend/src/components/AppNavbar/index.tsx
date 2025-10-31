@@ -1,7 +1,6 @@
-// frontend/src/components/AppNavbar/index.tsx
 import { Container, Button, Navbar, Nav } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom'; // 1. Importar o Link
+import { Link, useNavigate } from 'react-router-dom';
 
 export function AppNavbar() {
   const { user, logout } = useAuth();
@@ -9,17 +8,13 @@ export function AppNavbar() {
 
   const handleLogout = () => {
     logout();
-    // O AuthContext já deve tratar do redirecionamento,
-    // mas podemos garantir aqui.
     navigate('/');
   };
 
   return (
-    // 2. Adicionada uma sombra (shadow-sm)
+    // Adicionada uma sombra (shadow-sm)
     <Navbar bg="dark" variant="dark" expand="lg" className="mb-4 shadow-sm">
       <Container>
-        {/* --- 3. GRANDE MUDANÇA AQUI --- */}
-        {/* Usar 'as={Link}' e 'to' para navegação SPA */}
         <Navbar.Brand as={Link} to="/dashboard">
           <img
             src="/logo.png" // Busca o logo.png na pasta /public
@@ -30,11 +25,9 @@ export function AppNavbar() {
           />
           <strong>AdaptLabelX</strong>
         </Navbar.Brand>
-        {/* --- Fim da Mudança --- */}
 
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
-          {/* 4. Usar 'as={Link}' nos links também */}
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/dashboard">Meus Datasets</Nav.Link>
             <Nav.Link as={Link} to="/models">Meus Modelos</Nav.Link>

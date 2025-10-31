@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import settings # Importar as settings
+from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 

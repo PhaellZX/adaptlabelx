@@ -1,4 +1,3 @@
-// frontend/src/components/AnnotationViewerModal/index.tsx
 import { useEffect, useRef } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
@@ -22,10 +21,7 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
             if (ctx) {
                 const img = new window.Image();
                 
-                // --- ESTA É A CORREÇÃO DA URL DA IMAGEM ---
-                // O caminho deve ser /uploads/ + o file_path (ex: /uploads/1/img.jpg)
                 img.src = `/uploads/${image.file_path.replace(/\\/g, '/')}`;
-                // --- FIM DA CORREÇÃO ---
                 
                 img.onload = () => {
                     canvas.width = img.width;
@@ -45,9 +41,6 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
                         let labelY = 0;
 
                         if (ann.annotation_type === 'segmentation') {
-                            // O seu 'ia_service.py' (enviado) guarda polígonos como uma lista de pontos [[x,y], [x,y]]
-                            // A sua correção do schema 'annotation.py' (enviado) guarda-os em 'geometry'
-                            // Vamos assumir que 'ann.geometry' é a lista de pontos
                             const polygon = ann.geometry as Polygon; 
                             if (!polygon || polygon.length === 0) return;
                             
@@ -67,7 +60,6 @@ export function AnnotationViewerModal({ show, handleClose, image }: AnnotationVi
                             ctx.fill();
 
                         } else { // 'detection'
-                            // O seu 'ia_service.py' (enviado) guarda bboxes como {'x': float, 'y': float, 'width': float, 'height': float}
                             const geometry = ann.geometry as BoundingBox;
                             const { x, y, width, height } = geometry;
                             // Converte de [centro_x, centro_y, w, h] (normalizado) para [x_min, y_min, w, h] (pixels)

@@ -1,19 +1,15 @@
-// frontend/src/components/CreateDatasetModal/index.tsx
-
 import { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import api from '../../services/api';
 import { Dataset } from '../../types';
 
 // O tipo para os modelos que vêm do backend
-// (Já estava no seu ficheiro)
 interface ModelOption {
   id: string | number;
   name: string;
 }
 
 // Os IDs dos modelos que devem mostrar o seletor de classes
-// (Já estava no seu ficheiro)
 const STANDARD_MODELS = ["yolov8n_det", "yolov8n_seg", "sam"];
 
 // Os 3 modelos padrão que sempre aparecem
@@ -23,7 +19,7 @@ const standardModelsList: ModelOption[] = [
   { id: "sam", name: "Segment Anything (SAM)" }
 ];
 
-// As 80 classes do COCO (Já estava no seu ficheiro)
+// As 80 classes do COCO
 const COCO_CLASSES = [
   "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat", "traffic light",
   "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow",
@@ -55,7 +51,7 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
 
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   
-  // Lógica para mostrar/esconder o seletor de classes (O seu ficheiro já tinha)
+  // Lógica para mostrar/esconder o seletor de classes
   const isStandardModel = STANDARD_MODELS.includes(selectedModel);
 
   // --- BUSCAR MODELOS CUSTOMIZADOS QUANDO O MODAL ABRE ---
@@ -91,7 +87,6 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
       fetchCustomModels();
     }
   }, [show]); // Depende apenas de 'show'
-  // --- FIM DO CÓDIGO DE BUSCA ---
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const options = e.target.options;
@@ -133,9 +128,6 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
       }
     }
   };
-
-  // Combina as listas de modelos
-  // const allModels = [...standardModelsList, ...customModels];
 
   return (
     <Modal show={show} onHide={handleClose} centered>
@@ -202,7 +194,6 @@ export function CreateDatasetModal({ show, handleClose, onDatasetCreated }: Crea
           </Form.Group>
           
           {/* --- DROPDOWN DE CLASSES (CONDICIONAL) --- */}
-          {/* (Esta lógica sua já estava perfeita) */}
           {isStandardModel && (
             <Form.Group className="mb-3">
               <Form.Label>Classes a Anotar</Form.Label>

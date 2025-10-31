@@ -1,5 +1,3 @@
-# backend/app/services/user_service.py
-
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
@@ -20,7 +18,6 @@ def create_user(db: Session, user: UserCreate):
     db.refresh(db_user)
     return db_user
 
-# NOVA FUNÇÃO DE AUTENTICAÇÃO
 def authenticate_user(db: Session, email: str, password: str):
     """
     Autentica um usuário, verificando email e senha.

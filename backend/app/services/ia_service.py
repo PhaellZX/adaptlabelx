@@ -1,5 +1,3 @@
-# backend/app/services/ia_service.py
-
 from ultralytics import YOLO
 from ultralytics.models.sam import SAM
 from sqlalchemy.orm import Session
@@ -11,7 +9,7 @@ from typing import List, Optional, Dict, Any
 from app.models.dataset import Image
 from app.models.annotation import Annotation
 from app.services import custom_model_service
-from app.core.database import SessionLocal # (Necessário para modelos customizados)
+from app.core.database import SessionLocal
 
 # --- Cache para Modelos Customizados ---
 custom_model_cache: Dict[str, Any] = {}
@@ -43,7 +41,7 @@ def run_model_on_image(
     image_path: str, 
     model_type: str, # Recebe 'yolov8n_det', 'sam', ou um ID '1'
     selected_classes: Optional[List[str]] = None,
-    owner_id: Optional[int] = None # <--- 1. CORREÇÃO: ACEITAR O 'owner_id'
+    owner_id: Optional[int] = None
 ):
     """
     Carrega o modelo correto e executa-o com o filtro de classes.
@@ -51,7 +49,7 @@ def run_model_on_image(
     model = None
     model_names_map = None
     filter_args = {}
-    is_standard_model = False # Flag para a sua correção lógica
+    is_standard_model = False
 
     # 1. Determinar qual modelo carregar
     if model_type == "yolov8n_det":
@@ -73,7 +71,7 @@ def run_model_on_image(
             return None
         try:
             db_temp = SessionLocal()
-            # --- 2. CORREÇÃO: USAR O 'owner_id' PARA BUSCAR O MODELO ---
+            
             custom_model = custom_model_service.get_model(
                 db_temp, 
                 model_id=int(model_type), 
@@ -96,8 +94,6 @@ def run_model_on_image(
         print(f"Não foi possível carregar o modelo para {model_type}")
         return None
     
-    # --- 3. CORREÇÃO LÓGICA (A SUA IDEIA) ---
-    # Só aplica o filtro de classes se for um modelo padrão
     if selected_classes and model_names_map and is_standard_model:
         class_indices = [
             k for k, v in model_names_map.items() if v in selected_classes
@@ -109,8 +105,7 @@ def run_model_on_image(
             print(f"Aviso: Classes {selected_classes} não encontradas no modelo.")
     elif not is_standard_model:
         print("Modelo customizado detectado. A anotar com todas as classes do modelo.")
-        filter_args = {} # Não filtra
-    # --- FIM DA CORREÇÃO LÓGICA ---
+        filter_args = {}
 
     # 4. Executar o pipeline de anotação
     if model_type == 'sam':
@@ -136,7 +131,7 @@ def create_annotations_from_results(
     results: Any, 
     db_image: Image, 
     model_id: str, # 'yolov8n_det', 'sam', ou '1'
-    owner_id: Optional[int] = None # <--- 4. CORREÇÃO: ACEITAR O 'owner_id'
+    owner_id: Optional[int] = None
 ):
     """
     Salva as anotações na base de dados.
@@ -166,7 +161,7 @@ def create_annotations_from_results(
             return []
         try:
             db_temp = SessionLocal()
-            # --- 5. CORREÇÃO: USAR O 'owner_id' PARA BUSCAR O MODELO ---
+
             custom_model = custom_model_service.get_model(
                 db_temp, 
                 model_id=int(model_id), 

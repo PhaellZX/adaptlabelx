@@ -1,5 +1,3 @@
-// frontend/src/contexts/AuthContext.tsx
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -54,9 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setLoading(false);
     }
-  }, []); // O '[]' está correto, só corre uma vez
+  }, []);
 
-  // --- A CORREÇÃO ESTÁ AQUI ---
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     try {
@@ -75,8 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // 2. Configurar o token para pedidos futuros
       setAuthorizationHeader(access_token);
 
-      // 3. (A MUDANÇA) Enviar o token MANUALMENTE neste pedido
-      //    para garantir que ele é enviado, sem depender do 'defaults'
       const userResponse = await api.get('/users/me', {
         headers: {
           Authorization: `Bearer ${access_token}`
