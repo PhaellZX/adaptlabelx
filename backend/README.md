@@ -12,7 +12,7 @@ Esta pasta contém o serviço de API RESTful para a plataforma AdaptLabelX, cons
 * **JWT (passlib/jose):** Para autenticação de usuário.
 
 ## 📂 Estrutura de Pastas
-
+```
 backend/ 
 ├── app/ 
 │ ├── api/ │
@@ -31,7 +31,7 @@ backend/
 ├── Dockerfile 
 ├── requirements.txt
 └── .env
-
+```
 ## ⚙️ Variáveis de Ambiente
 
 Para executar o backend, é necessário um ficheiro `.env` na raiz do projeto (junto ao `docker-compose.yml`) com as seguintes variáveis:
@@ -55,12 +55,12 @@ DATABASE_URL=seu_url_do_neon_aqui
 ```
 
 ## 🚀 Como Executar
-### Este serviço é projetado para ser executado com o Docker Compose a partir da raiz do projeto.
-### 1. Construir e Subir os Contêineres:
+Este serviço é projetado para ser executado com o Docker Compose a partir da raiz do projeto.
+1. Construir e Subir os Contêineres:
 ```
 docker-compose up --build
 ```
 
-### 2. A API estará disponível em: http://localhost:8000 (embora o Nginx faça o proxy a partir do http://localhost).
+2. A API estará disponível em: http://localhost:8000 (embora o Nginx faça o proxy a partir do http://localhost).
 
-### 3. Documentação (Swagger): http://localhost:8000/docs
+3. Documentação (Swagger): http://localhost:8000/docs
