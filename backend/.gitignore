@@ -3,3 +3,4 @@
 .env
 test.db
 /ia_models
+/custom_models_user
