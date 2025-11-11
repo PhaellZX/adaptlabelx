@@ -37,7 +37,8 @@ backend/
 Para executar o backend, é necessário um ficheiro `.env` na raiz do projeto (junto ao `docker-compose.yml`) com as seguintes variáveis:
 
 ### dotenv:
-Chave secreta para JWT (gere uma com 'openssl rand -hex 32')
+Chave secreta para JWT 
+gere uma com (Windows:'openssl rand -hex 32') OU (Linux:'head -c 32 /dev/urandom | base64')
 ```
 SECRET_KEY=sua_chave_secreta_super_segura
 ```

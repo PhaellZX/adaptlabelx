@@ -24,7 +24,9 @@ export function RegisterPage() {
         email: email,
         password: password,
       });
-      navigate('/'); 
+      navigate('/', { 
+        state: { message: 'Cadastro Efetuado com sucesso!' } 
+      }); 
     } catch (err: any) {
       console.error("Falha no cadastro:", err);
       setError(err.response?.data?.detail || 'Falha no cadastro. Tente outro email.');

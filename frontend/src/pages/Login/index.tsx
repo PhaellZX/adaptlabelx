@@ -1,17 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const { login } = useAuth();
+  const location = useLocation(); // <--- 4. Obter a "location"
+  const navigate = useNavigate(); // <--- 5. Obter o "navigate"
+
+  useEffect(() => {
+    // Verifica se a página foi carregada com uma mensagem de estado
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      
+      // Limpa o estado da localização para que a mensagem
+      // não apareça novamente se o usuário atualizar a página (F5)
+      navigate('.', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]); // Depende de location.state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage(null);
 
     try {
       const success = await login(email, password);
@@ -37,8 +53,9 @@ export function LoginPage() {
             />
             <h2 className="mb-0">Login</h2>
           </div>
-
+          {/* --- Mostrar o Alerta de Erro OU Sucesso --- */}
           {error && <Alert variant="danger">{error}</Alert>}
+          {successMessage && <Alert variant="success">{successMessage}</Alert>}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Endereço de Email</Form.Label>
