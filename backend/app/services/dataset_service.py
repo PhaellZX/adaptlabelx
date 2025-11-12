@@ -161,11 +161,27 @@ def export_annotations_yolo(db: Session, db_dataset: Dataset):
             txt_content = []
             
             for ann in image.annotations:
-                if ann.annotation_type == 'detection': 
-                    class_id = class_map[ann.class_label]
-                    geo = ann.geometry
-                    txt_content.append(f"{class_id} {geo['x']} {geo['y']} {geo['width']} {geo['height']}")
+                class_id = class_map.get(ann.class_label)
+                if class_id is None:
+                    continue 
 
+                if ann.annotation_type == 'detection' and isinstance(ann.geometry, dict): 
+                    geo = ann.geometry
+                
+                    x = geo.get('x', 0)
+                    y = geo.get('y', 0)
+                    w = geo.get('width', 0)
+                    h = geo.get('height', 0)
+                    txt_content.append(f"{class_id} {x:.6f} {y:.6f} {w:.6f} {h:.6f}")
+                
+                elif ann.annotation_type == 'segmentation' and isinstance(ann.geometry, list):
+                    geo = ann.geometry 
+                    
+                    points_str = " ".join([f"{coord:.6f}" for point in geo for coord in point])
+                    
+                    if points_str:
+                        txt_content.append(f"{class_id} {points_str}")
+                
             if txt_content:
                 zip_file.writestr(f"labels/{txt_filename}", "\n".join(txt_content))
 
