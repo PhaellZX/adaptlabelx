@@ -121,9 +121,13 @@ def run_model_on_image(
         
     elif model:
         print(f"Executando modelo {model_type}...")
-        return model(image_path, verbose=False, **filter_args)[0]
-    
-    return None
+        # Adicione conf=0.10 para forçar o modelo customizado a ser menos rígido no teste
+        results_list = model(image_path, verbose=False, conf=0.10, **filter_args)
+        
+        if not results_list:
+            return None
+            
+        return results_list[0]
 
 
 def create_annotations_from_results(
