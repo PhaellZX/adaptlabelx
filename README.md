@@ -4,7 +4,7 @@
   <img src="frontend/public/logo.png" width="300">
 </div>
 
-**AdaptLabelX** é uma plataforma web inteligente para anotação automática de imagens, desenvolvida como um Trabalho de Conclusão de Curso (TCC). A ferramenta acelera o processo de rotulagem de datasets para visão computacional, permitindo que os usuários utilizem modelos de IA de ponta (como YOLOv8 e SAM) ou façam o upload dos seus próprios modelos customizados.
+**AdaptLabelX** It is an intelligent web platform for automatic image annotation, developed as a capstone project. The tool accelerates the dataset labeling process for computer vision, allowing users to utilize state-of-the-art AI models (such as YOLOv8 and SAM) or upload their own custom models.
 
 ![Badge Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
 ![Badge FastAPI](https://img.shields.io/badge/FastAPI-0.103-green?logo=fastapi)
@@ -14,39 +14,40 @@
 
 ---
 
-## 🎯 Sobre o Projeto
+## 🎯 About the Project
 
-O gargalo no desenvolvimento de modelos de Visão Computacional é, frequentemente, a criação de datasets anotados. O AdaptLabelX resolve este problema ao fornecer uma interface de usuário simples onde é possível:
-1.  Criar um dataset.
-2.  Fazer o upload de imagens.
-3.  Selecionar um modelo de IA (padrão ou customizado).
-4.  Anotar automaticamente todas as imagens com um clique.
-5.  Exportar as anotações em formatos padrão de mercado.
+The bottleneck in Computer Vision model development is often the creation of annotated datasets. AdaptLabelX addresses this issue by providing a simple user interface that allows you to:
+1.  Create a dataset.
+2.  Upload images.
+3.  Select an AI model (standard or custom).
+4.  Automatically annotate all images with a single click.
+5.  Export annotations in industry-standard formats.
 
-## ✨ Funcionalidades Principais
+## ✨ Key Features
 
-* **Autenticação de Usuário:** Sistema seguro de registro e login com tokens JWT.
-* **Gerenciamento de Datasets:** Crie, visualize, atualize e delete os seus projetos de anotação.
-* **Upload de Imagens:** Envio de múltiplas imagens em lote para um dataset.
-* **Anotação Automática Inteligente:**
-    * **YOLOv8 Detecção:** Utiliza o modelo `yolov8n.pt` para detecção de objetos (bounding boxes).
-    * **YOLOv8 Segmentação:** Utiliza o `yolov8n-seg.pt` para segmentação de instâncias (polígonos).
-    * **Segment Anything (SAM):** Utiliza o `sam_b.pt` combinado com o YOLO para segmentação de alta precisão.
-* **Filtro de Classes:** Para os modelos padrão (YOLO/SAM), o usuário pode escolher quais das 80 classes do COCO ele deseja anotar (ex: "cat" e "dog").
-* **Modelos Customizados:**
-    * **Upload:** Faça o upload dos seus próprios modelos `.pt` treinados (ex: `yolov8nTeste001.pt`).
-    * **Anotação:** Use os seus modelos customizados para anotar imagens (o sistema usa as classes nativas do seu modelo).
-* **Exportação de Anotações:** Exporte o seu dataset completo nos formatos mais populares:
-    * `YOLO (.txt)`
-    * `COCO (.json)`
-    * `LabelMe (.json)`
-    * `CVAT (.xml)`
+* **User Authentication:** Secure registration and login system using JWT tokens.
+* **Dataset Management:** Create, view, update, and delete your annotation projects.
+* **Image Upload:** Batch upload multiple images to a dataset.
+* **Intelligent Automatic Annotation:**
+* **YOLOv8 Detection:** Uses the `yolov8n.pt` model for object detection (bounding boxes). 
+* **YOLOv8 Segmentation:** Uses `yolov8n-seg.pt` for instance segmentation (polygons). 
+* **Segment Anything (SAM):** Uses `sam_b.pt` combined with YOLO for high-precision segmentation.
+* **Class Filtering:** For standard models (YOLO/SAM), users can select which of the 80 COCO classes they wish to annotate (e.g., "cat" and "dog").
+* **Custom Models:**
+* **Upload:** Upload your own trained `.pt` models (e.g., `yolov8nTeste001.pt`). 
+* **Annotation:** Use your custom models to annotate images (the system utilizes your model's native classes).
+* **Annotation Export:** Export your complete dataset in popular formats:
+* `YOLO (.txt)`
+* `COCO (.json)`
+* `LabelMe (.json)`
+* `CVAT (.xml)`
+  
+## 🛠️ Architecture
 
-## 🛠️ Arquitetura
+The project is fully containerized using Docker and consists of two main services:
 
-O projeto é totalmente containerizado usando Docker e é composto por dois serviços principais:
+1. **Backend (API):** A robust RESTful API built with **FastAPI** (Python), responsible for business logic, interaction with AI (Ultralytics), and database management (PostgreSQL/Neon).
 
-1.  **Backend (API):** Uma API RESTful robusta construída com **FastAPI** (Python), responsável pela lógica de negócio, interação com a IA (Ultralytics) e gerenciamento do banco de dados (PostgreSQL/Neon).
-2.  **Frontend:** Uma Single Page Application (SPA) moderna e responsiva construída com **React** e **TypeScript**, servida através do **Nginx**.
+2. **Frontend:** A modern and responsive Single Page Application (SPA) built with **React** and **TypeScript**, served through **Nginx**.
 
 ---
