@@ -1,61 +1,61 @@
 # ⚛️ Frontend (React App) - AdaptLabelX
 
-Esta pasta contém a aplicação React (SPA) para a plataforma AdaptLabelX.
+This folder contains the React application (SPA) for the AdaptLabelX platform.
 
-## 🛠️ Stack Tecnológica
+## 🛠️ Technology Stack
 
-* **React 18:** Para a construção da interface de usuário.
-* **TypeScript:** Para tipagem estática.
-* **React Router DOM:** Para gerenciamento de rotas.
-* **React-Bootstrap:** Para componentes de UI (Modais, Cards, Navbar).
-* **Axios:** Para fazer requisições à API do backend.
-* **Nginx:** Para servir os ficheiros estáticos e atuar como proxy reverso.
+* **React 18:** For building the user interface.
+* **TypeScript:** For static typing.
+* **React Router DOM:** For route management.
+* **React-Bootstrap:** For UI components (Modals, Cards, Navbar).
+* **Axios:** For making requests to the backend API.
+* **Nginx:** For serving static files and acting as a reverse proxy.
 
-## 📂 Estrutura de Pastas
+## 📂 Folder Structure
 ```
-frontend/ 
-├── public/ 
-├── src/ 
-│ ├── components/ # Componentes reutilizáveis (AppNavbar, Footer, Modais)
-│ ├── contexts/ # Contexto de Autenticação (AuthContext) 
-│ ├── pages/ # Páginas principais (Login, Dashboard, DatasetDetail) 
-│ ├── routes/ # Configuração das Rotas (index.tsx, ProtectedRoute.tsx) 
-│ ├── services/ # Configuração do Axios (api.ts)
-│ ├── types/ # Definições de tipos (index.ts) 
-│ ├── App.tsx # Componente raiz
-│ └── main.tsx # Ponto de entrada do React
-├── Dockerfile 
-└── nginx.conf # Configuração do Proxy Nginx
+frontend/
+├── public/
+├── src/
+│ ├── components/ # Reusable components (AppNavbar, Footer, Modals)
+│ ├── contexts/ # Authentication context (AuthContext)
+│ ├── pages/ # Main pages (Login, Dashboard, DatasetDetail)
+│ ├── routes/ # Route configuration (index.tsx, ProtectedRoute.tsx)
+│ ├── services/ # Axios configuration (api.ts)
+│ ├── types/ # Type definitions (index.ts)
+│ ├── App.tsx # Root component
+│ └── main.tsx # React entry point
+├── Dockerfile
+└── nginx.conf # Nginx proxy configuration
 ```
 
-## ⚙️ Configuração do Proxy (Nginx)
+## ⚙️ Proxy Configuration (Nginx)
 
-Este frontend **não** precisa de um ficheiro `.env` para a URL da API, pois o Nginx trata de toda a comunicação. O `nginx.conf` está configurado para:
+This frontend does **not** require a `.env` file for the API URL, as Nginx handles all communication. The `nginx.conf` is configured to:
 
-1.  Servir a aplicação React como um SPA (Single Page Application).
-2.  Redirecionar todos os pedidos de API para o backend.
-3.  Redirecionar todos os pedidos de imagens (uploads) para o backend.
+1.  Serve the React application as an SPA (Single Page Application).
+2.  Redirect all API requests to the backend.
+3.  Redirect all image requests (uploads) to the backend.
 ```
 # frontend/nginx.conf
 
-# Proxy da API
-location /api/ {
-    proxy_pass http://backend:8000/; 
+# API Proxy
+location /api/ { 
+proxy_pass http://backend:8000/;
 }
 
-# Proxy de Imagens
-location /uploads/ {
-    proxy_pass http://backend:8000/uploads/;
+# Image Proxy
+location /uploads/ { 
+proxy_pass http://backend:8000/uploads/;
 }
 ```
 
-## 🚀 Como Executar
+## 🚀 How to Execute
 
-Este serviço é projetado para ser executado com o Docker Compose a partir da raiz do projeto.
+This service is designed to be run with Docker Compose from the project root.
 
-1. Construir e Subir os Contêineres:
+1. Build and Start the Containers:
 ```
 docker-compose up --build
 ```
 
-2. A aplicação estará disponível em: http://localhost
+2. The application will be available at: http://localhost
